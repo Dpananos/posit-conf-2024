@@ -1,0 +1,4 @@
+"0","summarized_experiment_data() %>% "
+"0","  mutate_if(is.numeric, scales::comma) %>% "
+"0","  kbl(col.names = c('Group', 'No. Users', 'Conversions')) %>% "
+"0","  kable_styling(font_size = KABLE_FS)"

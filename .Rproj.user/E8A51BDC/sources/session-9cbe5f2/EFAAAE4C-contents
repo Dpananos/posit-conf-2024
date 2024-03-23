@@ -1,0 +1,166 @@
+---
+title: Making Sense of Marginal Effects
+subtitle: An Intro to `{marginaleffects}`
+format: clean-revealjs
+author:
+  - name: Demetri Pananos
+date: last-modified
+---
+
+```{r}
+#| echo: false
+#| include: false
+library(tidyverse)
+library(kableExtra)
+files <- list.files('R', pattern = '*.R', full.names = T)
+sapply(files, source)
+experiment_data <- create_experiment_data()
+
+
+  
+```
+
+## "Regression is All You Need"
+
+* Many of the standard statistical tests can be done via regression
+* Regression can:
+
+  ::: {.nonincremental}
+  - Be straight forward
+  - Provide standard statistical measures (e.g. confidence intervals)
+  - Be Interpretable
+  :::
+  
+  ::: {.incremental}
+  
+  - Also be uninterpretable?
+  
+  :::
+  
+## An Example: A/B Testing
+
+::: {.fragment fragment-index=1}
+- Binary outcome (conversions), two groups
+
+```{r}
+summarized_experiment_data() %>% 
+  mutate_if(is.numeric, scales::comma) %>% 
+  kbl(col.names = c('Group', 'No. Users', 'Conversions')) %>% 
+  kable_styling(font_size = KABLE_FS)
+```
+:::
+
+::: {.fragment fragment-index=2}
+* No problem, test of proportions
+
+```{r}
+#| echo: true
+#| eval: false
+
+with(summarized_experiment_data, 
+     prop.test(conversions, N)) %>% 
+  broom::tidy()
+```
+
+::: 
+
+::: {.fragment fragment-index=3}
+```{r}
+with(summarized_experiment_data(), prop.test(conversions, N)) %>% 
+  broom::tidy()  %>% 
+  mutate_at(vars(starts_with('conf')), round, digits=3) %>% 
+  transmute(
+    Estimate = estimate2-estimate1, 
+    `Confidence Interval` = str_c('(', -conf.high, ' \U2012 ', -conf.low, ')'),
+    p = scales::pvalue(p.value)
+  ) %>% 
+  kbl(digits=3) %>%
+  kable_styling(font_size = KABLE_FS)
+
+```
+
+::: 
+
+
+## "Hey, About That Test..."
+
+* "What about mobile users?"
+* "What about non-english speaking users?"
+* "Can you report the lift?"
+
+::: {.fragment fragment-index=1}
+* Ok, now logistic regression
+
+```{r}
+#| echo: true
+#| eval: false
+
+glm(conversion ~ treat*lang*device, data=experiment_data, family = binomial())
+```
+:::
+
+
+::: {.fragment fragment-index=2}
+```{r}
+glm(conversion ~ treat*lang*device, data=experiment_data, family = binomial()) %>% 
+  broom::tidy() %>% 
+  select(term, estimate, p.value) %>% 
+  mutate(
+    p.value = scales::pvalue(p.value)
+  ) %>% 
+  kbl(digits=3, caption = "This is an example of 'Table 2'") %>% 
+  kable_styling(font_size = 22)
+```
+
+:::
+
+## The Problem of Table 2
+
+* Regression coefficients can get very confusing
+
+* Problem gets worse with non-linearities
+
+* Need to turn model estimates into something easily understood
+
+::: {.fragment fragment-index=1}
+
+![](assets/Marginaleffects logo.png){width=50% fig-align="center"}
+
+:::
+
+## The `{marginaleffects}` Package
+
+* `{marginaleffects}` is:
+  * A package for computing predictions, contrasts, and hypothesis tests for 100 + models in R (and python)
+  * Documented with abundant examples and vignettes
+  * More efficient as compared to other packages
+  * and so much more (valid, lightweight, extensible, actively developed)
+  
+
+## The Remainder of This Talk
+
+* What is a marginal effect and why should you care?
+
+* "Quantity, grid, aggregation, uncertainty, and test" workflow
+
+* Examples & Plots!
+
+## What Is a Marginal Effect?
+
+* _Marginal Effect_:
+  * The derivative of the prediction at $X = x$
+
+
+```{r}
+
+ggplot() + 
+  stat_function(aes(color='Prediction'), fun=plogis, xlim = c(-3, 3)) +
+  stat_function(aes(color='Derivative'), fun=\(x) plogis(x) * (1-plogis(x)), xlim = c(-3, 3)) +
+  ylim(0, 1) + 
+  theme_minimal() + 
+  theme(aspect.ratio = 1/1.61, legend.position = 'bottom') + 
+  labs(x='x', y='Predicted Probability', title = "The Marginal Effect Is The Derivative!", color='') + 
+  scale_color_manual(values = c('red','black')) + 
+  guides(colour = guide_legend(reverse=T))
+```
+
