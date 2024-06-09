@@ -1,6 +1,4 @@
 ---
-title: Making Sense of Marginal Effects
-subtitle: An Intro to `{marginaleffects}`
 author:
   - name: Demetri Pananos
 ---
@@ -10,22 +8,44 @@ author:
 * Demo talk: https://zoom.us/rec/share/Vt4vyOFFiotMm7NCBx6nDT8712DgB1dW_eITcpbfjOAV-RrAGgfVfHx3JBjv_O4i.u3XO0He9WRga682Q
 * Passcode: V+np$z1t
 
-* By doing X (X1, X2, X3), you get Y effect, for Z impact.
-
-
 * By
-  * Acknowledging "Tests Are Models, and Models Can Test"
-  * Knowing what you're trying to estimate, not tricks for getting estimands
-  * Use {marginaleffects}
+  - Specifying your desired comparison as a function
+  - Understanding what groups you want compare, and
+  - Using {marginaleffects} to handle the calculations
   
-* You can avoid a lot of hassle in the analysis of data 
-* Having the impact of giving you more mental energy to focus on the story
+* You can:
+  - Talk about comparisons in whatever way is natural to your audience
+  
+* Having the impact of:
+  - Having your audience more easily understand your message
 
 
-- Hook: My name is Demetri and I hate odds ratios.
+## Outline
+
+* Hook
+  - The way in which we talk about comparisons matters
+    - I traveled 
+        2.17e-05 AUs to get here vs 3800 Kms
+    - I am 
+        11,259.2 sols old vs 32 years old
+
+* This applies to regression, since the coefficients of regression are comparisons.
+  - Odds ratios are not a great way to compare
+  - Probability in one group is 0.1
+  - I tell you the probability in another group has an odds twice as large
+  - You think
+    - 1/10 x 2 = 2/10 = 20%
+  - In reality
+    - 2/11 ~ 18%
+  - I asked on twitter and 
+    - https://x.com/PhDemetri/status/1799918613044076951
+    - https://x.com/PhDemetri/status/1799922204466983405
   
-  - I hate them because they create needless confusion for DS and stake holders.
-  - And yet, when analyzing binary data, they can be hard to avoid.
-  
-  
-- 
+* Logistic regression is built on odds ratios.  This hurts interpretability
+  - This has bit me when I was working in AB testing.
+  - All my models were in terms of log odds -- they had to be!
+  - Stake holders wanted lift (ratio of conversion rates).
+  - I was telling them my age in sols when they wanted to know years.
+
+
+

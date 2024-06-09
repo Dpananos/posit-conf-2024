@@ -13,19 +13,20 @@ create_experiment_data <- function() {
     mutate(wt = c(0.4, 0.4, 0.1, 0.1))
   
   grid <- dgrid %>% 
-    sample_n(4000, replace=T, weight = wt) %>% 
+    sample_n(20000, replace=T, weight = wt) %>% 
     mutate(
-      tenure = rpois(n(), 2.5)
+      tenure = pmin(6.0, rpois(n(), 2.5))
     )
   
-  X <- model.matrix( ~ device*treat + splines::ns(tenure,Boundary.knots = c(2, 5), knots = c(2.5, 4.5)),
+  X <- model.matrix( ~ device*treat + treat*splines::ns(tenure,Boundary.knots = c(2, 5), knots = c(2.5, 4.5)),
                      data=grid
                     )
   
 
   b <- c(0.10, -0.03, 0.015, 
          -1/20, -1/20, -1/20, 
-         -0.013)
+         -0.013,
+         -0.005, -0.005, -0.005)
   
   
   
