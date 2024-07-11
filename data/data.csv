@@ -1,0 +1,5 @@
+device,lang,pop_weight,weight,p_control,p_treat
+Desktop,English,0.4,0.8,0.1,0.15
+Desktop,Non-English,0.2,0.1,0.04,0.02
+Mobile,English,0.3,0.05,0.08,0.03
+Mobile,Non-English,0.1,0.05,0.01,0.01

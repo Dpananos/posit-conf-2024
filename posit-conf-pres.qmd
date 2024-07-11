@@ -1,0 +1,518 @@
+---
+title: Using `{marginaleffects}` to get interpretable comparisons
+subtitle: or "Odds ratios?  more like 'Odd Ratios'!"
+format: clean-revealjs
+html-math-method:
+  method: mathjax
+  url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+author:
+  - name: Demetri Pananos
+date: last-modified
+execute:
+  echo: true
+---
+
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(marginaleffects)
+
+options(width = 10000)
+options(marginaleffects_print_column_names = 10000)
+options(marginaleffects_print_type = FALSE)
+options(digits = 2)
+
+od <- tibble::tribble(
+  ~device,         ~lang, ~pop_weight, ~exp_weight, ~p_control, ~p_treat,
+  "Desktop",     "English",         0.4,     0.8,        0.1,     0.115,
+  "Desktop", "Non-English",         0.2,     0.1,       0.04,     0.02,
+  "Mobile",     "English",         0.3,    0.05,       0.08,     0.03,
+  "Mobile", "Non-English",         0.1,    0.05,       0.01,     0.01
+)
+
+population_weights <- od %>% 
+                      select(device, lang, pop_weight)
+
+
+withr::with_seed(0, {
+  
+experiment_data <- od %>% 
+                   sample_n(100000, weight = exp_weight, replace=T) %>% 
+                   group_by(device, lang) %>% 
+                   mutate(
+                     treatment = sample(c('Treatment','Control'), size = n(), replace=T),
+                     p = case_match(treatment, 'Treatment' ~ p_treat, .default = p_control),
+                     conversion = rbinom(n(), 1, p)
+                   ) %>% 
+                   ungroup
+
+})
+```
+
+
+## Comparisons are Important
+
+* I am **11, 207 Sols** old
+* To get here, I traveled **0.00002 AUs**
+
+## Comparisons are Important
+
+* I am ~~11, 207 Sols~~ **32 years** old
+* To get here, I traveled ~~0.00002 AUs~~ **3, 200 Kms**
+
+
+## Comparisons are Important
+
+* I am ~~11, 207 Sols~~ **32 years** old
+* To get here, I traveled ~~0.00002 AUs~~ ~~3, 200 Kms~~ **2, 000 Miles**
+
+::: {.incremental}
+
+- The way we talk about comparisons is important
+- Applies to data science since _regression creates comparisons_
+
+:::
+
+## Odds are Hard to Interpret
+
+* First Poll
+  * The probability an engineer goes to Positconf::2024 is 10%
+  * The **probability** a data scientist goes to Positconf::2024 is twice as large.
+
+:::{.incremental}
+
+  * What is the probability a data scientist goes to Positconf::2024?
+:::
+
+::: {.fragment .fade-in}
+
+```{r}
+#| echo: false
+polls <- tribble(
+  ~'prop', ~'response', ~"prompt", ~"correct", 
+  0.107, "<20%", "Probability", 0,
+  0.833, "20%", "Probability", 1,
+  0.06,  ">20%", "Probability", 0,
+  .345, "<20%", "Odds", 1,
+  .419, "20%", "Odds", 0,
+  .236, ">20%", "Odds", 0
+) %>% 
+  mutate(
+    response = factor(response, levels = c("<20%", "20%", ">20%"), ordered = T),
+    prompt = fct_rev(prompt),
+    correct = factor(correct)
+  ) 
+
+my_labeller <- function(variable,value){
+  return(str_c('Comparison Using ', value))
+}
+
+
+polls %>% 
+  filter(prompt=='Probability') %>% 
+  ggplot(aes(response, prop, fill=correct)) + 
+  geom_col(color='black') +
+  facet_wrap(~prompt, labeller = my_labeller) + 
+  scale_y_continuous(labels = scales::percent) + 
+  scale_fill_manual(values = c('light gray', '#4DAF4A')) + 
+  labs(x='Participant Response', 
+       y = 'Proportion of Responses') + 
+  guides(fill='none') + 
+  theme(
+    aspect.ratio = 1 / 1.61,
+    panel.background = element_rect(fill = "transparent", colour = 'black'),
+    plot.background = element_rect(fill = "transparent", colour = NA),
+    axis.title = element_text(colour = "black", size = 16),
+    axis.text = element_text(colour = "black", size = 14),
+    axis.ticks = element_line(colour = "black"),
+    axis.line = element_line(colour = "black"),
+    strip.background = element_rect(fill = "transparent", colour = NA),
+    strip.text = element_text(colour = "black", size = 18),
+    panel.grid.major = element_line(colour = "black", linetype = "dashed"), # Major grid lines
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent", colour = NA),
+    legend.text = element_text(colour = "black"),
+    legend.title = element_text(colour = "black"),
+    legend.key = element_rect(fill = "transparent", colour = NA),
+    title = element_text(color="black"),
+    plot.margin=grid::unit(c(1,1,1,1), "cm")
+  )
+```
+
+:::
+
+
+## Odds are Hard to Interpret
+
+* Second Poll
+  * The probability an engineer goes to Positconf::2024 is 10%
+  * The [**odds**]{style="color:red;"} a data scientist goes to Positconf::2024 is twice as large.
+
+:::{.incremental}
+
+  * What is the probability a data scientist goes to Positconf::2024?
+:::
+
+::: {.fragment .fade-in}
+
+```{r}
+#| echo: false
+polls %>% 
+  filter(prompt=='Odds') %>% 
+  ggplot(aes(response, prop, fill=correct)) + 
+  geom_col(color='black') +
+  facet_wrap(~prompt, labeller = my_labeller) + 
+  scale_y_continuous(labels = scales::percent) + 
+  scale_fill_manual(values = c('light gray', '#4DAF4A')) + 
+  labs(x='Participant Response', 
+       y = 'Proportion of Responses') + 
+  guides(fill='none') + 
+  theme(
+    aspect.ratio = 1 / 1.61,
+    panel.background = element_rect(fill = "transparent", colour = 'black'),
+    plot.background = element_rect(fill = "transparent", colour = NA),
+    axis.title = element_text(colour = "black", size = 16),
+    axis.text = element_text(colour = "black", size = 14),
+    axis.ticks = element_line(colour = "black"),
+    axis.line = element_line(colour = "black"),
+    strip.background = element_rect(fill = "transparent", colour = NA),
+    strip.text = element_text(colour = "black", size = 18),
+    panel.grid.major = element_line(colour = "black", linetype = "dashed"), # Major grid lines
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent", colour = NA),
+    legend.text = element_text(colour = "black"),
+    legend.title = element_text(colour = "black"),
+    legend.key = element_rect(fill = "transparent", colour = NA),
+    title = element_text(color="black"),
+    plot.margin=grid::unit(c(1,1,1,1), "cm")
+  )
+```
+
+::: 
+
+## 
+
+
+![](fig/Selection Bias explain xkcd.png){fig-align="center" width=80%}
+
+## Data Science Is Hard...
+
+* Need to
+  * Communicate in years, not sols
+  * Create unbiased comparisons
+  * Tell a compelling story
+* What do we use? How do we do that?
+
+
+## Use `{marginaleffects}`!
+
+:::: {.columns}
+
+::: {.column width="50%"}
+* Generate comparisons from over 100+ models using `avg_comparisons`
+* Re-weight comparisons  with `wts` argument
+* Plot using `plot_predictions` and `plot_comparisons`
+* Available for R and python!
+:::
+
+::: {.column width="50%"}
+![](fig/Marginaleffects logo.svg){fig-align="center" width=80%}
+:::
+
+::::
+
+
+## Use `{marginaleffects}`!
+
+:::: {.columns}
+
+::: {.column width="50%"}
+By ...
+
+  1. Writing your comparison as a function
+  2. Specifying the weights of the groups in your population, and
+  3. Using `{marginaleffects}` to handle estimates and plots
+
+You can communicate to your audience in a way natural to them and tell a compelling story.
+:::
+
+::: {.column width="50%"}
+![](fig/Marginaleffects logo.svg){fig-align="center" width=80%}
+:::
+
+:::: 
+
+
+
+
+## A True(ish) Story
+
+A colleague came to me one day...
+
+* 🤬 Demetri, Help!
+
+
+
+::: {.fragment .fade-in}
+```{r}
+#| echo: true
+
+model <- glm(conversion ~ treatment*device*lang, 
+  data=experiment_data,
+  family = binomial())
+```
+:::
+
+<br>
+
+::: {.fragment .fade-in}
+* 🤷🏽‍♂️ Is this what I need? What does it mean?
+```{r}
+#| echo: true
+
+# Exponentiate to get odds ratios
+broom::tidy(model, exponentiate = TRUE)
+```
+:::
+
+
+
+
+## Write Your Comparison as a Function
+
+$$
+\operatorname{lift} = \frac{E[Y\mid B] - E[Y \mid A]}{E[Y \mid A]}
+$$
+
+
+:::{.fragment .fade-in}
+```{r}
+#| echo: true
+lift <- function(hi, lo){
+  diff <- mean(hi) - mean(lo)
+  diff / mean(lo)
+}
+```
+:::
+
+<br> 
+
+::: {.fragment .fade-in}
+
+```{r}
+#| echo: true
+#| eval: false
+library(marginaleffects)
+avg_comparisons(model=model, variables = 'treatment', comparison = lift)
+```
+```{r}
+#| echo: false
+#| eval: true
+avg_comparisons(model=model, variables = 'treatment', comparison = lift) %>% 
+  as_tibble() ->d
+
+
+select(d, -contrast) %>% 
+  select(term, estimate, std.error, p.value,  starts_with('conf'))
+```
+
+:::
+
+## 1. Write Your Comparison as a Function
+
+::: {.fragment .fade-in}
+
+```{r}
+#| echo: true
+#| eval: false
+#| code-line-numbers: "2"
+avg_comparisons(model=model, variables = 'treatment', comparison = lift,
+                by = 'device')
+```
+
+```{r}
+#| echo: false
+#| eval: true
+avg_comparisons(model=model, variables = 'treatment', comparison = lift,
+                by = 'device') %>% 
+  as_tibble()-> d
+
+
+select(d, -contrast) %>% 
+  select(term, device, estimate, std.error, p.value, starts_with('conf'))
+
+```
+
+:::
+
+<br>
+
+::: {.fragment .fade-in}
+
+
+```{r}
+#| echo: true
+#| eval: false
+#| code-line-numbers: "2"
+avg_comparisons(model=model, variables = 'treatment', comparison = lift,
+                by = c('device','lang'))
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| code-line-numbers: "2"
+avg_comparisons(model=model, variables = 'treatment', comparison = lift,
+                by = c('device', 'lang')) %>% 
+  as_tibble() -> d
+
+
+select(d, -contrast) %>% 
+  select(term, device, lang, estimate,  std.error, p.value,  starts_with('conf'))
+```
+
+:::
+
+## Take Away
+
+* Write your comparison as a function
+* Get the marginal comparison with `avg_comparisons()`
+* Use the `by=` argument to get comparison within groups
+
+
+## 2. Weight Your Groups
+
+* 👍🏾 Got it, lift of 4.44%
+
+::: {.incremental}
+
+* One more thing...
+* We decided to add mobile users *near the end* of the experiment.
+  * Comparisons are *biased*!
+
+
+:::
+  
+  
+
+## 2. Weight Your Groups
+
+* Correct bias with `newdata=` and `wts=` arguments to `avg_comparisons()`
+
+
+::: {.fragment .fade-in}
+
+```{r}
+
+population_weights
+
+```
+
+:::
+
+<br>
+
+::: {.fragment .fade-in}
+
+```{r}
+#| echo: true
+#| eval: false
+#| code-line-numbers: "2-3"
+avg_comparisons(model=model, variables = 'treatment', comparison = lift,
+                newdata = population_weights,
+                wts='pop_weight')
+```
+
+
+
+
+```{r}
+#| echo: false
+#| eval: true
+avg_comparisons(model=model, variables = 'treatment', comparison = lift,
+                newdata = population_weights,
+                wts='pop_weight') %>% 
+  as_tibble() -> d
+
+
+select(d, -contrast) %>% 
+  select(term, estimate,  std.error, p.value,  starts_with('conf'))
+```
+:::
+
+
+## Take Away
+
+* Bias can result from improper weighting of groups
+* Specify the weights for each group in a dataframe
+* Use `weights` to tell `avg_comparisons` what weights should be used.
+
+
+## 3. Use `{marginaleffects}` to Handle Plots
+
+::: {.incremental}
+* 😮‍💨  Thanks!  I need to make some plots.
+  * `{marginaleffects}` can help with that too.
+  * `plot_predictions` can plot model estimates!
+  * `plot_comparisons` can plot comparisons!
+
+:::
+
+
+## 3. Use `{marginaleffects}` to Handle Plots
+
+::: {.incremental}
+
+* 🤔 `ggplot(aes(device, conversion, color=treatment)) + ... + facet_wrap(...)`? 
+
+  * Sure, but don't forget to weight the data
+
+:::
+
+::: {.fragment .fade-in}
+
+```{r}
+#| fig-height: 4
+population_weights_w_treat <- population_weights %>% 
+                              crossing(
+                                treatment = c('Treatment','Control')
+                              )
+plot_predictions(model=model,  by = 'treatment', 
+                 newdata = population_weights_w_treat, wts='pop_weight')
+
+
+
+```
+
+:::
+
+## 3. Use `{marginaleffects}` to Handle Plots
+
+
+::: {.incremental}
+* 🤯 That was so easy
+
+  * `plot_predictions` returns a ggplot object
+:::
+  
+
+::: {.fragment .fade-in}
+
+```{r}
+#| fig-height: 4
+#| code-line-numbers: "3-5"
+
+plot_predictions(model=model,  by = 'treatment', 
+                 newdata = population_weights_w_treat, wts='pop_weight') + 
+  scale_y_continuous(labels = scales::percent) + 
+  theme_minimal()+
+  labs(title='Bad News: Treatment Decreases Overall Conversion')
+```
+
+:::
+
+

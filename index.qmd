@@ -48,4 +48,239 @@ author:
   - I was telling them my age in sols when they wanted to know years.
 
 
+* Doesn't have to be this way
+  * We can describe our regressions anyway we like.  By...
+      - Specifying your desired comparison as a function
+      - Understanding what groups you want compare, and
+      - Using {marginaleffects} to handle the calculations
+      
+  * You can:
+    - Talk about comparisons in whatever way is natural to your audience
+  
+  * Having the impact of:
+    - Having your audience more easily understand your message
+    
+    
+* Specifying your comparison as a function.
+
+  * 
+    
+    
+## But what about??
+
+
+```{r}
+library(tidyverse)
+library(marginaleffects)
+source('R/utils.R')
+
+set.seed(0)
+# Set up some data
+d <- tibble::tribble(
+  ~device,         ~lang, ~pop_weight, ~exp_weight, ~p_control, ~p_treat,
+  "Desktop",     "English",         0.4,     0.8,        0.1,     0.115,
+  "Desktop", "Non-English",         0.2,     0.1,       0.04,     0.02,
+  "Mobile",     "English",         0.3,    0.05,       0.08,     0.03,
+  "Mobile", "Non-English",         0.1,    0.05,       0.01,     0.01
+)
+
+(
+  true_experiment_cf <- d %>% 
+                      summarise_at(.vars = vars(p_control, p_treat), 
+                                   .funs = ~ weighted.mean(., w=exp_weight)) %>% 
+                      mutate(lift = (p_treat - p_control) / p_control)
+  )
+
+
+(
+  true_population_cf <- d %>% 
+                      summarise_at(.vars = vars(p_control, p_treat), 
+                                   .funs = ~ weighted.mean(., w=pop_weight)) %>% 
+                      mutate(lift = (p_treat - p_control) / p_control)
+  )
+  
+```
+
+
+
+```{r}
+# sample data from the experiment
+
+
+withr::with_seed(0, {
+  
+experiment_data <- d %>% 
+                   sample_n(100000, weight = exp_weight, replace=T) %>% 
+                   group_by(device, lang) %>% 
+                   mutate(
+                     treatment = sample(c('Treatment','Control'), size = n(), replace=T),
+                     p = case_match(treatment, 'Treatment' ~ p_treat, .default = p_control),
+                     y = rbinom(n(), 1, p)
+                   ) %>% 
+                   ungroup
+
+})
+
+# Sample lift
+(
+  sample_lift <- experiment_data %>% 
+                 group_by(treatment) %>%  
+                 summarise(y = mean(y)) %>% 
+                 pivot_wider(names_from = treatment, values_from = y) %>% 
+                 mutate(
+                   rd = (Treatment - Control),
+                   lift = rd / Control
+                 )
+                 
+)
+
+
+
+# Fit a model on this experiment data
+model <- glm(y ~ treatment * device * lang, data=experiment_data, family = binomial())
+
+lift <- function(hi, lo) mean(hi - lo) / mean(lo)
+
+avg_comparisons(
+  model, 
+  variables = 'treatment',
+  comparison = lift
+)
+
+
+```
+
+```{r}
+w <- experiment_data %>% 
+  count(device, lang) %>% 
+  mutate(w = n/ sum(n))
+
+avg_comparisons(
+  model, 
+  variables = 'treatment',
+  comparison = lift,
+  by = c('device','lang')
+) %>% 
+  left_join(w)
+```
+
+
+```{r}
+tribble(
+  ~'prop', ~'response', ~"prompt", ~"correct", 
+  0.107, "<20%", "Probability", 0,
+  0.833, "20%", "Probability", 1,
+  0.06,  ">20%", "Probability", 0,
+  .345, "<20%", "Odds", 1,
+  .419, "20%", "Odds", 0,
+  .236, ">20%", "Odds", 0
+) %>% 
+  mutate(
+    response = factor(response, levels = c("<20%", "20%", ">20%"), ordered = T),
+    prompt = fct_rev(prompt),
+    correct = factor(correct)
+  ) %>% 
+  ggplot(aes(response, prop, fill=correct)) + 
+  geom_col(color='black') +
+  facet_wrap(~prompt) + 
+  scale_y_continuous(labels = scales::percent) + 
+  scale_fill_brewer(palette = 'Set1') + 
+  labs(x='Participant Response', 
+       y = 'Proportion of Responses', 
+       title = "The Probability in Group A is 10%. What is the Probability\nin Group B if the ________ in Group B is 2x as Big as Group A?") + 
+  guides(fill='none') + 
+  theme(
+    aspect.ratio = 1,
+    panel.background = element_rect(fill = "transparent", colour = 'white'),
+    plot.background = element_rect(fill = "transparent", colour = NA),
+    axis.title = element_text(colour = "white"),
+    axis.text = element_text(colour = "white"),
+    axis.ticks = element_line(colour = "white"),
+    axis.line = element_line(colour = "white"),
+    strip.background = element_rect(fill = "transparent", colour = NA),
+    strip.text = element_text(colour = "white", size = 12),
+    panel.grid.major = element_line(colour = "white", linetype = "dashed"), # Major grid lines
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent", colour = NA),
+    legend.text = element_text(colour = "white"),
+    legend.title = element_text(colour = "white"),
+    legend.key = element_rect(fill = "transparent", colour = NA),
+    title = element_text(color="white"),
+    plot.margin=grid::unit(c(1,1,1,1), "cm")
+  ) 
+
+ggsave('fig/fig0.svg')
+
+```
+
+
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+experiment_data %>% 
+  ggplot(aes(device, y, fill=treatment)) + 
+  stat_summary(
+    fun.data = \(x) mean_se(x, 2),
+    position = position_dodge2(0.25),
+    shape=21
+  ) + 
+  facet_wrap(~lang) + 
+  scale_y_continuous(labels = scales::percent) + 
+  scale_shape_manual(values = c(19, 21)) + 
+  scale_fill_brewer(palette = 'Set1') + 
+  labs(x='', y= 'Conversion Rate', fill = 'Group') + 
+  theme(
+    aspect.ratio = 1,
+    panel.background = element_rect(fill = "transparent", colour = 'white'),
+    plot.background = element_rect(fill = "transparent", colour = NA),
+    axis.title = element_text(colour = "white"),
+    axis.text = element_text(colour = "white"),
+    axis.ticks = element_line(colour = "white"),
+    axis.line = element_line(colour = "white"),
+    strip.background = element_rect(fill = "transparent", colour = NA),
+    strip.text = element_text(colour = "white"),
+    panel.grid.major = element_line(colour = "white", linetype = "dashed"), # Major grid lines
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent", colour = NA),
+    legend.text = element_text(colour = "white"),
+    legend.title = element_text(colour = "white"),
+    legend.key = element_rect(fill = "transparent", colour = NA),
+    plot.margin=grid::unit(c(0,0,0,0), "mm")
+  ) 
+
+
+ggsave('fig/fig1.svg')
+```
+
+
+```{r}
+
+avg_comparisons(model, 
+                variables = 'treatment', 
+                comparison = \(hi, lo, w) weighted.mean(hi - lo, w) / weighted.mean(lo, w),
+                newdata = d %>% crossing(treatment = c('Treatment','Control')), 
+                wts='pop_weight')
+
+d %>% 
+  crossing(treatment = c('Treatment','Control')) %>% 
+  modelr::add_predictions(model, type = 'response') %>% 
+  summarise(
+    z = weighted.mean(pred, pop_weight),
+    .by = treatment
+  )->r
+
+
+lift(r$z[2], r$z[1])
+
+
+avg_predictions(model, 
+                by = 'treatment',
+                newdata = d %>% crossing(treatment = c('Treatment','Control')), 
+                wts='pop_weight')
+
+
+```
 
