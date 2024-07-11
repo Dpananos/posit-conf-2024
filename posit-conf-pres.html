@@ -11,8 +11,8 @@
   <meta name="generator" content="quarto-1.4.549">
 
   <meta name="author" content="Demetri Pananos">
-  <meta name="dcterms.date" content="2024-07-10">
-  <title>Using {marginaleffects} to get interpretable comparisons</title>
+  <meta name="dcterms.date" content="2024-07-11">
+  <title>Using {marginaleffects} For Better Comparisons</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -392,7 +392,7 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">Using <code>{marginaleffects}</code> to get interpretable comparisons</h1>
+  <h1 class="title">Using <code>{marginaleffects}</code> For Better Comparisons</h1>
   <p class="subtitle">or “Odds ratios? more like ‘Odd Ratios’!”</p>
 
 <div class="quarto-title-authors">
@@ -403,7 +403,7 @@ Demetri Pananos
 </div>
 </div>
 
-  <p class="date">July 10, 2024</p>
+  <p class="date">July 11, 2024</p>
 </section>
 <section id="comparisons-are-important" class="slide level2">
 <h2>Comparisons are Important</h2>
@@ -435,10 +435,11 @@ Demetri Pananos
 <section id="odds-are-hard-to-interpret" class="slide level2">
 <h2>Odds are Hard to Interpret</h2>
 <ul>
-<li>First Poll
+<li>First Poll</li>
+<li>At Positconf::2024…
 <ul>
-<li>The probability an engineer goes to Positconf::2024 is 10%</li>
-<li>The <strong>probability</strong> a data scientist goes to Positconf::2024 is twice as large.</li>
+<li>The probability an engineer attends is 10%</li>
+<li>The <strong>probability</strong> a data scientist attends is twice as large.</li>
 </ul></li>
 </ul>
 <div>
@@ -461,10 +462,11 @@ Demetri Pananos
 <section id="odds-are-hard-to-interpret-1" class="slide level2">
 <h2>Odds are Hard to Interpret</h2>
 <ul>
-<li>Second Poll
+<li>Second Poll</li>
+<li>At Positconf::2024…
 <ul>
-<li>The probability an engineer goes to Positconf::2024 is 10%</li>
-<li>The <span style="color:red;"><strong>odds</strong></span> a data scientist goes to Positconf::2024 is twice as large.</li>
+<li>The probability an engineer attends is 10%</li>
+<li>The <span style="color:red;"><strong>odds</strong></span> a data scientist attends is twice as large.</li>
 </ul></li>
 </ul>
 <div>
@@ -555,7 +557,7 @@ Demetri Pananos
 <p><br></p>
 <div class="fragment fade-in">
 <ul>
-<li>🤷🏽‍♂️ Is this what I need? What does it mean?</li>
+<li>🤷🏽‍♂️ My PM wants “lift”. Is this the lift?</li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href=""></a><span class="co"># Exponentiate to get odds ratios</span></span>
@@ -667,7 +669,7 @@ Demetri Pananos
 <section id="weight-your-groups-1" class="slide level2">
 <h2>2. Weight Your Groups</h2>
 <ul>
-<li>Correct bias with <code>newdata=</code> and <code>wts=</code> arguments to <code>avg_comparisons()</code></li>
+<li>Create a weighted comparison function, correct with <code>newdata=</code> and <code>wts=</code></li>
 </ul>
 <div class="fragment fade-in">
 <div class="cell">
@@ -683,19 +685,25 @@ Demetri Pananos
 </div>
 </div>
 </div>
-<p><br></p>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13" data-code-line-numbers="2-3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>, <span class="at">comparison =</span> lift,</span>
-<span id="cb13-2"><a href=""></a>                <span class="at">newdata =</span> population_weights,</span>
-<span id="cb13-3"><a href=""></a>                <span class="at">wts=</span><span class="st">'pop_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href=""></a>weighted_lift <span class="ot">&lt;-</span> <span class="cf">function</span>(hi, lo, w){</span>
+<span id="cb13-2"><a href=""></a>  diff <span class="ot">&lt;-</span> <span class="fu">weighted.mean</span>(hi, w) <span class="sc">-</span> <span class="fu">weighted.mean</span>(lo, w)</span>
+<span id="cb13-3"><a href=""></a>  diff <span class="sc">/</span> <span class="fu">weighted.mean</span>(lo, w)</span>
+<span id="cb13-4"><a href=""></a>}</span>
+<span id="cb13-5"><a href=""></a></span>
+<span id="cb13-6"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>,</span>
+<span id="cb13-7"><a href=""></a>                <span class="at">newdata =</span> population_weights,</span>
+<span id="cb13-8"><a href=""></a>                <span class="at">comparison=</span>weighted_lift,</span>
+<span id="cb13-9"><a href=""></a>                <span class="at">wts=</span><span class="st">'pop_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p><br></p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 6
   term      estimate std.error  p.value conf.low conf.high
   &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment   -0.283    0.0284 2.59e-23   -0.338    -0.227</code></pre>
+1 treatment   -0.224    0.0260 6.45e-18   -0.275    -0.173</code></pre>
 </div>
 </div>
 </div>
@@ -705,7 +713,7 @@ Demetri Pananos
 <ul>
 <li>Bias can result from improper weighting of groups</li>
 <li>Specify the weights for each group in a dataframe</li>
-<li>Use <code>weights</code> to tell <code>avg_comparisons</code> what weights should be used.</li>
+<li>Use a weighted comparison and <code>wts</code> to tell <code>avg_comparisons</code> what weights should be used.</li>
 </ul>
 </section>
 <section id="use-marginaleffects-to-handle-plots" class="slide level2">
@@ -737,8 +745,10 @@ Demetri Pananos
 <span id="cb15-2"><a href=""></a>                              <span class="fu">crossing</span>(</span>
 <span id="cb15-3"><a href=""></a>                                <span class="at">treatment =</span> <span class="fu">c</span>(<span class="st">'Treatment'</span>,<span class="st">'Control'</span>)</span>
 <span id="cb15-4"><a href=""></a>                              )</span>
-<span id="cb15-5"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
-<span id="cb15-6"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'pop_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb15-5"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
+<span id="cb15-6"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
+<span id="cb15-7"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
+<span id="cb15-8"><a href=""></a>                 <span class="at">wts=</span><span class="st">'pop_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure>
@@ -761,11 +771,12 @@ Demetri Pananos
 </div>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16" data-code-line-numbers="3-5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
-<span id="cb16-2"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'pop_weight'</span>) <span class="sc">+</span> </span>
-<span id="cb16-3"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent) <span class="sc">+</span> </span>
-<span id="cb16-4"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
-<span id="cb16-5"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16" data-code-line-numbers="4-6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
+<span id="cb16-2"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
+<span id="cb16-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'pop_weight'</span>) <span class="sc">+</span> </span>
+<span id="cb16-4"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent) <span class="sc">+</span> </span>
+<span id="cb16-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
+<span id="cb16-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure>
@@ -775,6 +786,44 @@ Demetri Pananos
 </div>
 </div>
 </div>
+</section>
+<section id="use-marginaleffects-to-handle-plots-3" class="slide level2">
+<h2>3. Use <code>{marginaleffects}</code> to Handle Plots</h2>
+<ul>
+<li>Can even plot groups with the <code>by</code> argument</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17" data-code-line-numbers="2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
+<span id="cb17-2"><a href=""></a>                 <span class="at">by =</span> <span class="fu">c</span>(<span class="st">'treatment'</span>, <span class="st">'device'</span>), </span>
+<span id="cb17-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'pop_weight'</span>) <span class="sc">+</span> </span>
+<span id="cb17-4"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent) <span class="sc">+</span> </span>
+<span id="cb17-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
+<span id="cb17-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-18-1.png" width="960" class="r-stretch"></section>
+<section id="use-marginaleffects-to-handle-plots-4" class="slide level2">
+<h2>3. Use <code>{marginaleffects}</code> to Handle Plots</h2>
+<ul>
+<li>And can plot lift using <code>plot_comparisons</code></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href=""></a><span class="fu">plot_comparisons</span>(<span class="at">model=</span>model, </span>
+<span id="cb18-2"><a href=""></a>                 <span class="at">variables =</span> <span class="st">'treatment'</span>, </span>
+<span id="cb18-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
+<span id="cb18-4"><a href=""></a>                 <span class="at">comparison =</span> weighted_lift, </span>
+<span id="cb18-5"><a href=""></a>                 <span class="at">wts=</span><span class="st">'pop_weight'</span>,</span>
+<span id="cb18-6"><a href=""></a>                 <span class="at">by=</span><span class="fu">c</span>(<span class="st">'device'</span>, <span class="st">'lang'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+</div>
+<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-19-1.png" width="960" class="r-stretch"></section>
+<section id="take-away-2" class="slide level2">
+<h2>Take Away</h2>
+<ul>
+<li>Using <code>plot_comparisons</code> and <code>plot_predictions</code> to help tell your story</li>
+<li>Return a ggplot object, add your finishing touches</li>
+<li>Signature is very similar to <code>avg_comparisons</code>.</li>
+</ul>
 <div class="quarto-auto-generated-content">
 <div class="footer footer-default">
 

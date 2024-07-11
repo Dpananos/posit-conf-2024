@@ -1,5 +1,5 @@
 ---
-title: Using `{marginaleffects}` to get interpretable comparisons
+title: Using `{marginaleffects}` For Better Comparisons
 subtitle: or "Odds ratios?  more like 'Odd Ratios'!"
 format: clean-revealjs
 html-math-method:
@@ -35,7 +35,7 @@ od <- tibble::tribble(
 )
 
 population_weights <- od %>% 
-                      select(device, lang, pop_weight)
+                      select(device, lang, pop_weight) 
 
 
 withr::with_seed(0, {
@@ -80,8 +80,9 @@ experiment_data <- od %>%
 ## Odds are Hard to Interpret
 
 * First Poll
-  * The probability an engineer goes to Positconf::2024 is 10%
-  * The **probability** a data scientist goes to Positconf::2024 is twice as large.
+* At Positconf::2024...
+  * The probability an engineer attends is 10%
+  * The **probability** a data scientist attends is twice as large.
 
 :::{.incremental}
 
@@ -149,8 +150,9 @@ polls %>%
 ## Odds are Hard to Interpret
 
 * Second Poll
-  * The probability an engineer goes to Positconf::2024 is 10%
-  * The [**odds**]{style="color:red;"} a data scientist goes to Positconf::2024 is twice as large.
+* At Positconf::2024...
+  * The probability an engineer attends is 10%
+  * The [**odds**]{style="color:red;"} a data scientist attends is twice as large.
 
 :::{.incremental}
 
@@ -270,7 +272,7 @@ model <- glm(conversion ~ treatment*device*lang,
 <br>
 
 ::: {.fragment .fade-in}
-* 🤷🏽‍♂️ Is this what I need? What does it mean?
+* 🤷🏽‍♂️ My PM wants "lift".  Is this the lift?
 ```{r}
 #| echo: true
 
@@ -394,47 +396,53 @@ select(d, -contrast) %>%
 * We decided to add mobile users *near the end* of the experiment.
   * Comparisons are *biased*!
 
-
 :::
   
   
 
 ## 2. Weight Your Groups
 
-* Correct bias with `newdata=` and `wts=` arguments to `avg_comparisons()`
-
+* Create a weighted comparison function, correct with `newdata=` and `wts=`
 
 ::: {.fragment .fade-in}
 
 ```{r}
-
 population_weights
-
 ```
 
 :::
-
-<br>
 
 ::: {.fragment .fade-in}
 
 ```{r}
 #| echo: true
 #| eval: false
-#| code-line-numbers: "2-3"
-avg_comparisons(model=model, variables = 'treatment', comparison = lift,
+weighted_lift <- function(hi, lo, w){
+  diff <- weighted.mean(hi, w) - weighted.mean(lo, w)
+  diff / weighted.mean(lo, w)
+}
+
+avg_comparisons(model=model, variables = 'treatment',
                 newdata = population_weights,
+                comparison=weighted_lift,
                 wts='pop_weight')
 ```
 
-
+<br>
 
 
 ```{r}
 #| echo: false
 #| eval: true
-avg_comparisons(model=model, variables = 'treatment', comparison = lift,
+
+weighted_lift <- function(hi, lo, w){
+  diff <- weighted.mean(hi, w) - weighted.mean(lo, w)
+  diff / weighted.mean(lo, w)
+}
+
+avg_comparisons(model=model, variables = 'treatment',
                 newdata = population_weights,
+                comparison=weighted_lift,
                 wts='pop_weight') %>% 
   as_tibble() -> d
 
@@ -449,8 +457,7 @@ select(d, -contrast) %>%
 
 * Bias can result from improper weighting of groups
 * Specify the weights for each group in a dataframe
-* Use `weights` to tell `avg_comparisons` what weights should be used.
-
+* Use a weighted comparison and `wts` to tell `avg_comparisons` what weights should be used.
 
 ## 3. Use `{marginaleffects}` to Handle Plots
 
@@ -481,10 +488,10 @@ population_weights_w_treat <- population_weights %>%
                               crossing(
                                 treatment = c('Treatment','Control')
                               )
-plot_predictions(model=model,  by = 'treatment', 
-                 newdata = population_weights_w_treat, wts='pop_weight')
-
-
+plot_predictions(model=model,  
+                 by = 'treatment', 
+                 newdata = population_weights_w_treat, 
+                 wts='pop_weight')
 
 ```
 
@@ -504,9 +511,10 @@ plot_predictions(model=model,  by = 'treatment',
 
 ```{r}
 #| fig-height: 4
-#| code-line-numbers: "3-5"
+#| code-line-numbers: "4-6"
 
-plot_predictions(model=model,  by = 'treatment', 
+plot_predictions(model=model,  
+                 by = 'treatment', 
                  newdata = population_weights_w_treat, wts='pop_weight') + 
   scale_y_continuous(labels = scales::percent) + 
   theme_minimal()+
@@ -516,3 +524,41 @@ plot_predictions(model=model,  by = 'treatment',
 :::
 
 
+
+## 3. Use `{marginaleffects}` to Handle Plots
+
+* Can even plot groups with the `by` argument
+
+```{r}
+#| fig-height: 4
+#| code-line-numbers: "2"
+
+plot_predictions(model=model,  
+                 by = c('treatment', 'device'), 
+                 newdata = population_weights_w_treat, wts='pop_weight') + 
+  scale_y_continuous(labels = scales::percent) + 
+  theme_minimal()+
+  labs(title='Bad News: Treatment Decreases Overall Conversion')
+```
+
+
+## 3. Use `{marginaleffects}` to Handle Plots
+
+* And can plot lift using `plot_comparisons`
+
+```{r}
+plot_comparisons(model=model, 
+                 variables = 'treatment', 
+                 newdata = population_weights_w_treat, 
+                 comparison = weighted_lift, 
+                 wts='pop_weight',
+                 by=c('device', 'lang'))
+
+```
+
+
+## Take Away
+
+* Using `plot_comparisons` and `plot_predictions` to help tell your story
+* Return a ggplot object, add your finishing touches
+* Signature is very similar to `avg_comparisons`.
