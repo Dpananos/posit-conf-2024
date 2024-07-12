@@ -11,7 +11,7 @@
   <meta name="generator" content="quarto-1.4.549">
 
   <meta name="author" content="Demetri Pananos">
-  <meta name="dcterms.date" content="2024-07-11">
+  <meta name="dcterms.date" content="2024-07-12">
   <title>Using {marginaleffects} For Better Comparisons</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -403,7 +403,7 @@ Demetri Pananos
 </div>
 </div>
 
-  <p class="date">July 11, 2024</p>
+  <p class="date">July 12, 2024</p>
 </section>
 <section id="comparisons-are-important" class="slide level2">
 <h2>Comparisons are Important</h2>
@@ -564,16 +564,16 @@ Demetri Pananos
 <span id="cb2-2"><a href=""></a>broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">exponentiate =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 8 × 5
-  term                                            estimate std.error statistic  p.value
-  &lt;chr&gt;                                              &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
-1 (Intercept)                                        0.112    0.0166   -132.   0       
-2 treatmentTreatment                                 1.12     0.0230      5.03 4.96e- 7
-3 deviceMobile                                       0.867    0.0730     -1.95 5.08e- 2
-4 langNon-English                                    0.351    0.0758    -13.8  1.77e-43
-5 treatmentTreatment:deviceMobile                    0.286    0.138      -9.05 1.43e-19
-6 treatmentTreatment:langNon-English                 0.457    0.128      -6.11 9.97e-10
-7 deviceMobile:langNon-English                       0.340    0.217      -4.98 6.25e- 7
-8 treatmentTreatment:deviceMobile:langNon-English    5.59     0.336       5.12 3.11e- 7</code></pre>
+  term                                            estimate std.error statistic   p.value
+  &lt;chr&gt;                                              &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+1 (Intercept)                                        0.112    0.0187   -117.   0        
+2 treatmentTreatment                                 1.22     0.0255      7.84 4.36e- 15
+3 deviceMobile                                       0.845    0.0742     -2.27 2.35e-  2
+4 langNon-English                                    0.365    0.0455    -22.1  2.71e-108
+5 treatmentTreatment:deviceMobile                    0.316    0.132      -8.75 2.16e- 18
+6 treatmentTreatment:langNon-English                 0.440    0.0738    -11.1  8.13e- 29
+7 deviceMobile:langNon-English                       0.224    0.509      -2.94 3.25e-  3
+8 treatmentTreatment:deviceMobile:langNon-English   10.5      0.647       3.63 2.82e-  4</code></pre>
 </div>
 </div>
 </div>
@@ -581,13 +581,13 @@ Demetri Pananos
 <section id="write-your-comparison-as-a-function" class="slide level2">
 <h2>Write Your Comparison as a Function</h2>
 <p><span class="math display">\[
-\operatorname{lift} = \frac{E[Y\mid B] - E[Y \mid A]}{E[Y \mid A]}
+\operatorname{lift} = \frac{E[Y\mid \mbox{Treat}] - E[Y \mid \mbox{Control}]}{E[Y \mid \mbox{Control}]}
 \]</span></p>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href=""></a>lift <span class="ot">&lt;-</span> <span class="cf">function</span>(hi, lo){</span>
-<span id="cb4-2"><a href=""></a>  diff <span class="ot">&lt;-</span> <span class="fu">mean</span>(hi) <span class="sc">-</span> <span class="fu">mean</span>(lo)</span>
-<span id="cb4-3"><a href=""></a>  diff <span class="sc">/</span> <span class="fu">mean</span>(lo)</span>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href=""></a>lift <span class="ot">&lt;-</span> <span class="cf">function</span>(treated, control){</span>
+<span id="cb4-2"><a href=""></a>  diff <span class="ot">&lt;-</span> <span class="fu">mean</span>(treated) <span class="sc">-</span> <span class="fu">mean</span>(control)</span>
+<span id="cb4-3"><a href=""></a>  diff <span class="sc">/</span> <span class="fu">mean</span>(control)</span>
 <span id="cb4-4"><a href=""></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
@@ -602,7 +602,7 @@ Demetri Pananos
 <pre><code># A tibble: 1 × 6
   term      estimate std.error p.value conf.low conf.high
   &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment   0.0444    0.0207  0.0323  0.00376    0.0851</code></pre>
+1 treatment   0.0545    0.0221  0.0137   0.0112    0.0979</code></pre>
 </div>
 </div>
 </div>
@@ -612,15 +612,16 @@ Demetri Pananos
 <div class="fragment fade-in">
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7" data-code-line-numbers="2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>, <span class="at">comparison =</span> lift,</span>
-<span id="cb7-2"><a href=""></a>                <span class="at">by =</span> <span class="st">'device'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb7-2"><a href=""></a>                <span class="at">by =</span> <span class="st">'device'</span></span>
+<span id="cb7-3"><a href=""></a>                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 7
   term      device  estimate std.error  p.value conf.low conf.high
   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment Desktop   0.0826    0.0219 1.63e- 4   0.0397     0.126
-2 treatment Mobile   -0.603     0.0461 3.94e-39  -0.694     -0.513</code></pre>
+1 treatment Desktop   0.0909    0.0233 9.79e- 5   0.0452     0.137
+2 treatment Mobile   -0.568     0.0515 3.18e-28  -0.669     -0.467</code></pre>
 </div>
 </div>
 </div>
@@ -628,17 +629,18 @@ Demetri Pananos
 <div class="fragment fade-in">
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9" data-code-line-numbers="2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>, <span class="at">comparison =</span> lift,</span>
-<span id="cb9-2"><a href=""></a>                <span class="at">by =</span> <span class="fu">c</span>(<span class="st">'device'</span>,<span class="st">'lang'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-2"><a href=""></a>                <span class="at">by =</span> <span class="fu">c</span>(<span class="st">'device'</span>,<span class="st">'lang'</span>)</span>
+<span id="cb9-3"><a href=""></a>                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 4 × 8
   term      device  lang        estimate std.error  p.value conf.low conf.high
   &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment Desktop English        0.109    0.0228 1.79e- 6   0.0642     0.154
-2 treatment Desktop Non-English   -0.477    0.0642 1.05e-13  -0.603     -0.351
-3 treatment Mobile  English       -0.659    0.0445 1.15e-49  -0.746     -0.572
-4 treatment Mobile  Non-English   -0.178    0.228  4.35e- 1  -0.624      0.268</code></pre>
+1 treatment Desktop English        0.195    0.0272 6.96e-13    0.142     0.248
+2 treatment Desktop Non-English   -0.453    0.0368 8.64e-35   -0.525    -0.381
+3 treatment Mobile  English       -0.592    0.0500 2.26e-32   -0.690    -0.494
+4 treatment Mobile  Non-English    0.770    1.10   4.85e- 1   -1.39      2.93 </code></pre>
 </div>
 </div>
 </div>
@@ -654,56 +656,56 @@ Demetri Pananos
 <section id="weight-your-groups" class="slide level2">
 <h2>2. Weight Your Groups</h2>
 <ul>
-<li>👍🏾 Got it, lift of 4.44%</li>
+<li>👍🏾 Got it, lift of 5.5%</li>
 </ul>
 <div>
 <ul>
 <li class="fragment">One more thing…</li>
 <li class="fragment">We decided to add mobile users <em>near the end</em> of the experiment.
 <ul>
-<li class="fragment">Comparisons are <em>biased</em>!</li>
+<li class="fragment">Weights are wrong! Do you know what this means?</li>
 </ul></li>
 </ul>
+</div>
+<div class="fragment fade-in">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href=""></a>population_weights</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 4
+  device  lang        population_weight experiment_weight
+  &lt;chr&gt;   &lt;chr&gt;                   &lt;dbl&gt;             &lt;dbl&gt;
+1 Desktop English                   0.4              0.63
+2 Desktop Non-English               0.2              0.31
+3 Mobile  English                   0.3              0.05
+4 Mobile  Non-English               0.1              0.01</code></pre>
+</div>
+</div>
 </div>
 </section>
 <section id="weight-your-groups-1" class="slide level2">
 <h2>2. Weight Your Groups</h2>
 <ul>
+<li>This means comparisons are biased!</li>
 <li>Create a weighted comparison function, correct with <code>newdata=</code> and <code>wts=</code></li>
 </ul>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href=""></a>population_weights</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 3
-  device  lang        pop_weight
-  &lt;chr&gt;   &lt;chr&gt;            &lt;dbl&gt;
-1 Desktop English            0.4
-2 Desktop Non-English        0.2
-3 Mobile  English            0.3
-4 Mobile  Non-English        0.1</code></pre>
-</div>
-</div>
-</div>
-<div class="fragment fade-in">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href=""></a>weighted_lift <span class="ot">&lt;-</span> <span class="cf">function</span>(hi, lo, w){</span>
-<span id="cb13-2"><a href=""></a>  diff <span class="ot">&lt;-</span> <span class="fu">weighted.mean</span>(hi, w) <span class="sc">-</span> <span class="fu">weighted.mean</span>(lo, w)</span>
-<span id="cb13-3"><a href=""></a>  diff <span class="sc">/</span> <span class="fu">weighted.mean</span>(lo, w)</span>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href=""></a>weighted_lift <span class="ot">&lt;-</span> <span class="cf">function</span>(treated, control, w){</span>
+<span id="cb13-2"><a href=""></a>  diff <span class="ot">&lt;-</span> <span class="fu">weighted.mean</span>(treated, w) <span class="sc">-</span> <span class="fu">weighted.mean</span>(control, w)</span>
+<span id="cb13-3"><a href=""></a>  diff <span class="sc">/</span> <span class="fu">weighted.mean</span>(control, w)</span>
 <span id="cb13-4"><a href=""></a>}</span>
 <span id="cb13-5"><a href=""></a></span>
-<span id="cb13-6"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>,</span>
-<span id="cb13-7"><a href=""></a>                <span class="at">newdata =</span> population_weights,</span>
-<span id="cb13-8"><a href=""></a>                <span class="at">comparison=</span>weighted_lift,</span>
-<span id="cb13-9"><a href=""></a>                <span class="at">wts=</span><span class="st">'pop_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb13-6"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>, </span>
+<span id="cb13-7"><a href=""></a>                <span class="at">comparison=</span>weighted_lift,</span>
+<span id="cb13-8"><a href=""></a>                <span class="at">newdata =</span> population_weights, </span>
+<span id="cb13-9"><a href=""></a>                <span class="at">wts=</span><span class="st">'population_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p><br></p>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 6
-  term      estimate std.error  p.value conf.low conf.high
-  &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment   -0.224    0.0260 6.45e-18   -0.275    -0.173</code></pre>
+  term      estimate std.error    p.value conf.low conf.high
+  &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+1 treatment   -0.140    0.0290 0.00000144   -0.197   -0.0830</code></pre>
 </div>
 </div>
 </div>
@@ -748,11 +750,11 @@ Demetri Pananos
 <span id="cb15-5"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
 <span id="cb15-6"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
 <span id="cb15-7"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
-<span id="cb15-8"><a href=""></a>                 <span class="at">wts=</span><span class="st">'pop_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb15-8"><a href=""></a>                 <span class="at">wts=</span><span class="st">'population_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-16-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-17-1.png" width="960"></p>
 </figure>
 </div>
 </div>
@@ -773,14 +775,14 @@ Demetri Pananos
 <div class="cell">
 <div class="sourceCode cell-code" id="cb16" data-code-line-numbers="4-6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
 <span id="cb16-2"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
-<span id="cb16-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'pop_weight'</span>) <span class="sc">+</span> </span>
+<span id="cb16-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'population_weight'</span>) <span class="sc">+</span> </span>
 <span id="cb16-4"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent) <span class="sc">+</span> </span>
 <span id="cb16-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
 <span id="cb16-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-17-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-18-1.png" width="960"></p>
 </figure>
 </div>
 </div>
@@ -795,13 +797,13 @@ Demetri Pananos
 <div class="cell">
 <div class="sourceCode cell-code" id="cb17" data-code-line-numbers="2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
 <span id="cb17-2"><a href=""></a>                 <span class="at">by =</span> <span class="fu">c</span>(<span class="st">'treatment'</span>, <span class="st">'device'</span>), </span>
-<span id="cb17-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'pop_weight'</span>) <span class="sc">+</span> </span>
+<span id="cb17-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'population_weight'</span>) <span class="sc">+</span> </span>
 <span id="cb17-4"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent) <span class="sc">+</span> </span>
 <span id="cb17-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
 <span id="cb17-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
-<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-18-1.png" width="960" class="r-stretch"></section>
+<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-19-1.png" width="960" class="r-stretch"></section>
 <section id="use-marginaleffects-to-handle-plots-4" class="slide level2">
 <h2>3. Use <code>{marginaleffects}</code> to Handle Plots</h2>
 <ul>
@@ -812,11 +814,11 @@ Demetri Pananos
 <span id="cb18-2"><a href=""></a>                 <span class="at">variables =</span> <span class="st">'treatment'</span>, </span>
 <span id="cb18-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
 <span id="cb18-4"><a href=""></a>                 <span class="at">comparison =</span> weighted_lift, </span>
-<span id="cb18-5"><a href=""></a>                 <span class="at">wts=</span><span class="st">'pop_weight'</span>,</span>
+<span id="cb18-5"><a href=""></a>                 <span class="at">wts=</span><span class="st">'population_weight'</span>,</span>
 <span id="cb18-6"><a href=""></a>                 <span class="at">by=</span><span class="fu">c</span>(<span class="st">'device'</span>, <span class="st">'lang'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
-<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-19-1.png" width="960" class="r-stretch"></section>
+<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-20-1.png" width="960" class="r-stretch"></section>
 <section id="take-away-2" class="slide level2">
 <h2>Take Away</h2>
 <ul>

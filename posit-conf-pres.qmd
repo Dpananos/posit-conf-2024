@@ -27,21 +27,21 @@ options(marginaleffects_print_type = FALSE)
 options(digits = 2)
 
 od <- tibble::tribble(
-  ~device,         ~lang, ~pop_weight, ~exp_weight, ~p_control, ~p_treat,
-  "Desktop",     "English",         0.4,     0.8,        0.1,     0.115,
-  "Desktop", "Non-English",         0.2,     0.1,       0.04,     0.02,
+  ~device,         ~lang, ~population_weight, ~experiment_weight, ~p_control, ~p_treat,
+  "Desktop",     "English",         0.4,     0.63,        0.1,     0.12,
+  "Desktop", "Non-English",         0.2,     0.31,       0.04,     0.02,
   "Mobile",     "English",         0.3,    0.05,       0.08,     0.03,
-  "Mobile", "Non-English",         0.1,    0.05,       0.01,     0.01
+  "Mobile", "Non-English",         0.1,    0.01,       0.01,     0.01
 )
 
 population_weights <- od %>% 
-                      select(device, lang, pop_weight) 
+                      select(device, lang, population_weight, experiment_weight) 
 
 
-withr::with_seed(0, {
+withr::with_seed(1, {
   
 experiment_data <- od %>% 
-                   sample_n(100000, weight = exp_weight, replace=T) %>% 
+                   sample_n(100000, weight = experiment_weight, replace=T) %>% 
                    group_by(device, lang) %>% 
                    mutate(
                      treatment = sample(c('Treatment','Control'), size = n(), replace=T),
@@ -51,6 +51,12 @@ experiment_data <- od %>%
                    ungroup
 
 })
+
+# a = od %>% summarise_at(vars(starts_with('p_')), ~weighted.mean(., experiment_weight))
+# b = od %>% summarise_at(vars(starts_with('p_')), ~weighted.mean(., population_weight)) 
+# 
+# bind_rows(a, b) %>% 
+#   mutate(lift = map2_dbl(p_treat, p_control, lift))
 ```
 
 
@@ -287,13 +293,21 @@ broom::tidy(model, exponentiate = TRUE)
 ## Write Your Comparison as a Function
 
 $$
-\operatorname{lift} = \frac{E[Y\mid B] - E[Y \mid A]}{E[Y \mid A]}
+\operatorname{lift} = \frac{E[Y\mid \mbox{Treat}] - E[Y \mid \mbox{Control}]}{E[Y \mid \mbox{Control}]}
 $$
 
 
 :::{.fragment .fade-in}
 ```{r}
 #| echo: true
+lift <- function(treated, control){
+  diff <- mean(treated) - mean(control)
+  diff / mean(control)
+}
+```
+
+```{r}
+#| echo: false
 lift <- function(hi, lo){
   diff <- mean(hi) - mean(lo)
   diff / mean(lo)
@@ -333,7 +347,8 @@ select(d, -contrast) %>%
 #| eval: false
 #| code-line-numbers: "2"
 avg_comparisons(model=model, variables = 'treatment', comparison = lift,
-                by = 'device')
+                by = 'device'
+                )
 ```
 
 ```{r}
@@ -361,7 +376,8 @@ select(d, -contrast) %>%
 #| eval: false
 #| code-line-numbers: "2"
 avg_comparisons(model=model, variables = 'treatment', comparison = lift,
-                by = c('device','lang'))
+                by = c('device','lang')
+                )
 ```
 
 ```{r}
@@ -388,21 +404,15 @@ select(d, -contrast) %>%
 
 ## 2. Weight Your Groups
 
-* 👍🏾 Got it, lift of 4.44%
+* 👍🏾 Got it, lift of 5.5%
 
 ::: {.incremental}
 
 * One more thing...
 * We decided to add mobile users *near the end* of the experiment.
-  * Comparisons are *biased*!
+  * Weights are wrong!  Do you know what this means?
 
 :::
-  
-  
-
-## 2. Weight Your Groups
-
-* Create a weighted comparison function, correct with `newdata=` and `wts=`
 
 ::: {.fragment .fade-in}
 
@@ -411,24 +421,33 @@ population_weights
 ```
 
 :::
+  
+  
+
+## 2. Weight Your Groups
+
+
+* This means comparisons are biased!
+* Create a weighted comparison function, correct with `newdata=` and `wts=`
+
 
 ::: {.fragment .fade-in}
 
 ```{r}
 #| echo: true
 #| eval: false
-weighted_lift <- function(hi, lo, w){
-  diff <- weighted.mean(hi, w) - weighted.mean(lo, w)
-  diff / weighted.mean(lo, w)
+weighted_lift <- function(treated, control, w){
+  diff <- weighted.mean(treated, w) - weighted.mean(control, w)
+  diff / weighted.mean(control, w)
 }
 
-avg_comparisons(model=model, variables = 'treatment',
-                newdata = population_weights,
+avg_comparisons(model=model, variables = 'treatment', 
                 comparison=weighted_lift,
-                wts='pop_weight')
+                newdata = population_weights, 
+                wts='population_weight')
 ```
 
-<br>
+
 
 
 ```{r}
@@ -443,7 +462,7 @@ weighted_lift <- function(hi, lo, w){
 avg_comparisons(model=model, variables = 'treatment',
                 newdata = population_weights,
                 comparison=weighted_lift,
-                wts='pop_weight') %>% 
+                wts='population_weight') %>% 
   as_tibble() -> d
 
 
@@ -491,7 +510,7 @@ population_weights_w_treat <- population_weights %>%
 plot_predictions(model=model,  
                  by = 'treatment', 
                  newdata = population_weights_w_treat, 
-                 wts='pop_weight')
+                 wts='population_weight')
 
 ```
 
@@ -515,7 +534,7 @@ plot_predictions(model=model,
 
 plot_predictions(model=model,  
                  by = 'treatment', 
-                 newdata = population_weights_w_treat, wts='pop_weight') + 
+                 newdata = population_weights_w_treat, wts='population_weight') + 
   scale_y_continuous(labels = scales::percent) + 
   theme_minimal()+
   labs(title='Bad News: Treatment Decreases Overall Conversion')
@@ -535,7 +554,7 @@ plot_predictions(model=model,
 
 plot_predictions(model=model,  
                  by = c('treatment', 'device'), 
-                 newdata = population_weights_w_treat, wts='pop_weight') + 
+                 newdata = population_weights_w_treat, wts='population_weight') + 
   scale_y_continuous(labels = scales::percent) + 
   theme_minimal()+
   labs(title='Bad News: Treatment Decreases Overall Conversion')
@@ -551,7 +570,7 @@ plot_comparisons(model=model,
                  variables = 'treatment', 
                  newdata = population_weights_w_treat, 
                  comparison = weighted_lift, 
-                 wts='pop_weight',
+                 wts='population_weight',
                  by=c('device', 'lang'))
 
 ```
