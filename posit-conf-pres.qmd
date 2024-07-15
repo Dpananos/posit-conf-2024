@@ -27,22 +27,20 @@ options(marginaleffects_print_type = FALSE)
 options(digits = 2)
 
 od <- tibble::tribble(
-  ~device,         ~lang, ~population_weight, ~experiment_weight, ~p_control, ~p_treat,
-  "Desktop",     "English",         0.4,     0.63,        0.1,     0.12,
-  "Desktop", "Non-English",         0.2,     0.31,       0.04,     0.02,
-  "Mobile",     "English",         0.3,    0.05,       0.08,     0.03,
-  "Mobile", "Non-English",         0.1,    0.01,       0.01,     0.01
+  ~device,         ~population_weight, ~experiment_weight, ~p_control, ~p_treat,
+  "Desktop",         0.6,     0.94,        0.1,     0.11,
+  "Mobile",         0.4,    0.06,          0.08,     0.03
 )
 
 population_weights <- od %>% 
-                      select(device, lang, population_weight, experiment_weight) 
+                      select(device, population_weight, experiment_weight) 
 
 
 withr::with_seed(1, {
   
 experiment_data <- od %>% 
                    sample_n(100000, weight = experiment_weight, replace=T) %>% 
-                   group_by(device, lang) %>% 
+                   group_by(device) %>% 
                    mutate(
                      treatment = sample(c('Treatment','Control'), size = n(), replace=T),
                      p = case_match(treatment, 'Treatment' ~ p_treat, .default = p_control),
@@ -51,11 +49,11 @@ experiment_data <- od %>%
                    ungroup
 
 })
-
-# a = od %>% summarise_at(vars(starts_with('p_')), ~weighted.mean(., experiment_weight))
-# b = od %>% summarise_at(vars(starts_with('p_')), ~weighted.mean(., population_weight)) 
 # 
-# bind_rows(a, b) %>% 
+# a = od %>% summarise_at(vars(starts_with('p_')), ~weighted.mean(., experiment_weight))
+# b = od %>% summarise_at(vars(starts_with('p_')), ~weighted.mean(., population_weight))
+# 
+# bind_rows(a, b) %>%
 #   mutate(lift = map2_dbl(p_treat, p_control, lift))
 ```
 
@@ -147,7 +145,10 @@ polls %>%
     legend.key = element_rect(fill = "transparent", colour = NA),
     title = element_text(color="black"),
     plot.margin=grid::unit(c(1,1,1,1), "cm")
-  )
+  ) + 
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) -> p1
+
+p1
 ```
 
 :::
@@ -174,7 +175,6 @@ polls %>%
   ggplot(aes(response, prop, fill=correct)) + 
   geom_col(color='black') +
   facet_wrap(~prompt, labeller = my_labeller) + 
-  scale_y_continuous(labels = scales::percent) + 
   scale_fill_manual(values = c('light gray', '#4DAF4A')) + 
   labs(x='Participant Response', 
        y = 'Proportion of Responses') + 
@@ -197,10 +197,48 @@ polls %>%
     legend.key = element_rect(fill = "transparent", colour = NA),
     title = element_text(color="black"),
     plot.margin=grid::unit(c(1,1,1,1), "cm")
-  )
+  ) + 
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) -> p2
+
+p2
 ```
 
 ::: 
+
+##
+
+```{r}
+#| echo: false
+polls %>% 
+  ggplot(aes(response, prop, fill=correct)) + 
+  geom_col(color='black') +
+  facet_wrap(~prompt, labeller = my_labeller) + 
+  scale_fill_manual(values = c('light gray', '#4DAF4A')) + 
+  labs(x='Participant Response', 
+       y = 'Proportion of Responses') + 
+  guides(fill='none') + 
+  theme(
+    aspect.ratio = 1 / 1.61,
+    panel.background = element_rect(fill = "transparent", colour = 'black'),
+    plot.background = element_rect(fill = "transparent", colour = NA),
+    axis.title = element_text(colour = "black", size = 16),
+    axis.text = element_text(colour = "black", size = 14),
+    axis.ticks = element_line(colour = "black"),
+    axis.line = element_line(colour = "black"),
+    strip.background = element_rect(fill = "transparent", colour = NA),
+    strip.text = element_text(colour = "black", size = 18),
+    panel.grid.major = element_line(colour = "black", linetype = "dashed"), # Major grid lines
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill = "transparent", colour = NA),
+    legend.text = element_text(colour = "black"),
+    legend.title = element_text(colour = "black"),
+    legend.key = element_rect(fill = "transparent", colour = NA),
+    title = element_text(color="black"),
+    plot.margin=grid::unit(c(1,1,1,1), "cm")
+  ) + 
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) 
+```
+
 
 ## 
 
@@ -210,7 +248,7 @@ polls %>%
 ## Data Science Is Hard...
 
 * Need to
-  * Communicate in years, not sols
+  * Communicate in an easily understood language (years, not sols)
   * Create unbiased comparisons
   * Tell a compelling story
 * What do we use? How do we do that?
@@ -261,7 +299,7 @@ You can communicate to your audience in a way natural to them and tell a compell
 
 A colleague came to me one day...
 
-* 🤬 Demetri, Help!
+* 👨🏾‍💻 Demetri, Help!
 
 
 
@@ -269,7 +307,7 @@ A colleague came to me one day...
 ```{r}
 #| echo: true
 
-model <- glm(conversion ~ treatment*device*lang, 
+model <- glm(conversion ~ treatment*device, 
   data=experiment_data,
   family = binomial())
 ```
@@ -278,9 +316,11 @@ model <- glm(conversion ~ treatment*device*lang,
 <br>
 
 ::: {.fragment .fade-in}
-* 🤷🏽‍♂️ My PM wants "lift".  Is this the lift?
+* 🤷🏽‍♂️ My PM wants "lift".  Do I need to fit a different model? Should I teach them to understand odds?
+  * You don't have to do either!
 ```{r}
-#| echo: true
+#| echo: false
+#| eval: false
 
 # Exponentiate to get odds ratios
 broom::tidy(model, exponentiate = TRUE)
@@ -290,7 +330,7 @@ broom::tidy(model, exponentiate = TRUE)
 
 
 
-## Write Your Comparison as a Function
+## 1. Write Your Comparison as a Function
 
 $$
 \operatorname{lift} = \frac{E[Y\mid \mbox{Treat}] - E[Y \mid \mbox{Control}]}{E[Y \mid \mbox{Control}]}
@@ -323,7 +363,10 @@ lift <- function(hi, lo){
 #| echo: true
 #| eval: false
 library(marginaleffects)
-avg_comparisons(model=model, variables = 'treatment', comparison = lift)
+avg_comparisons(model = model,
+                comparison = lift,
+                variables = 'treatment'
+                )
 ```
 ```{r}
 #| echo: false
@@ -345,8 +388,10 @@ select(d, -contrast) %>%
 ```{r}
 #| echo: true
 #| eval: false
-#| code-line-numbers: "2"
-avg_comparisons(model=model, variables = 'treatment', comparison = lift,
+#| code-line-numbers: "4"
+avg_comparisons(model = model,
+                comparison = lift,
+                variables = 'treatment',
                 by = 'device'
                 )
 ```
@@ -368,32 +413,6 @@ select(d, -contrast) %>%
 
 <br>
 
-::: {.fragment .fade-in}
-
-
-```{r}
-#| echo: true
-#| eval: false
-#| code-line-numbers: "2"
-avg_comparisons(model=model, variables = 'treatment', comparison = lift,
-                by = c('device','lang')
-                )
-```
-
-```{r}
-#| echo: false
-#| eval: true
-#| code-line-numbers: "2"
-avg_comparisons(model=model, variables = 'treatment', comparison = lift,
-                by = c('device', 'lang')) %>% 
-  as_tibble() -> d
-
-
-select(d, -contrast) %>% 
-  select(term, device, lang, estimate,  std.error, p.value,  starts_with('conf'))
-```
-
-:::
 
 ## Take Away
 
@@ -404,13 +423,13 @@ select(d, -contrast) %>%
 
 ## 2. Weight Your Groups
 
-* 👍🏾 Got it, lift of 5.5%
+* 👍🏾 Got it, lift of 7.5%
 
 ::: {.incremental}
 
 * One more thing...
 * We decided to add mobile users *near the end* of the experiment.
-  * Weights are wrong!  Do you know what this means?
+  * Experiment weights don't match population weights!
 
 :::
 
@@ -482,7 +501,6 @@ select(d, -contrast) %>%
 
 ::: {.incremental}
 * 😮‍💨  Thanks!  I need to make some plots.
-  * `{marginaleffects}` can help with that too.
   * `plot_predictions` can plot model estimates!
   * `plot_comparisons` can plot comparisons!
 
@@ -493,7 +511,7 @@ select(d, -contrast) %>%
 
 ::: {.incremental}
 
-* 🤔 `ggplot(aes(device, conversion, color=treatment)) + ... + facet_wrap(...)`? 
+* 🤔 `ggplot(aes(treatment, conversion, color=device)) + ... `
 
   * Sure, but don't forget to weight the data
 
@@ -561,23 +579,3 @@ plot_predictions(model=model,
 ```
 
 
-## 3. Use `{marginaleffects}` to Handle Plots
-
-* And can plot lift using `plot_comparisons`
-
-```{r}
-plot_comparisons(model=model, 
-                 variables = 'treatment', 
-                 newdata = population_weights_w_treat, 
-                 comparison = weighted_lift, 
-                 wts='population_weight',
-                 by=c('device', 'lang'))
-
-```
-
-
-## Take Away
-
-* Using `plot_comparisons` and `plot_predictions` to help tell your story
-* Return a ggplot object, add your finishing touches
-* Signature is very similar to `avg_comparisons`.

@@ -11,7 +11,7 @@
   <meta name="generator" content="quarto-1.4.549">
 
   <meta name="author" content="Demetri Pananos">
-  <meta name="dcterms.date" content="2024-07-12">
+  <meta name="dcterms.date" content="2024-07-14">
   <title>Using {marginaleffects} For Better Comparisons</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -403,7 +403,7 @@ Demetri Pananos
 </div>
 </div>
 
-  <p class="date">July 12, 2024</p>
+  <p class="date">July 14, 2024</p>
 </section>
 <section id="comparisons-are-important" class="slide level2">
 <h2>Comparisons are Important</h2>
@@ -489,13 +489,17 @@ Demetri Pananos
 <section id="section" class="slide level2">
 <h2></h2>
 
+<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-4-1.png" width="960" class="r-stretch"></section>
+<section id="section-1" class="slide level2">
+<h2></h2>
+
 <img data-src="fig/Selection%20Bias%20explain%20xkcd.png" class="quarto-figure quarto-figure-center r-stretch" style="width:80.0%"></section>
 <section id="data-science-is-hard" class="slide level2">
 <h2>Data Science Is Hard…</h2>
 <ul>
 <li>Need to
 <ul>
-<li>Communicate in years, not sols</li>
+<li>Communicate in an easily understood language (years, not sols)</li>
 <li>Create unbiased comparisons</li>
 <li>Tell a compelling story</li>
 </ul></li>
@@ -545,11 +549,11 @@ Demetri Pananos
 <h2>A True(ish) Story</h2>
 <p>A colleague came to me one day…</p>
 <ul>
-<li>🤬 Demetri, Help!</li>
+<li>👨🏾‍💻 Demetri, Help!</li>
 </ul>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a>model <span class="ot">&lt;-</span> <span class="fu">glm</span>(conversion <span class="sc">~</span> treatment<span class="sc">*</span>device<span class="sc">*</span>lang, </span>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a>model <span class="ot">&lt;-</span> <span class="fu">glm</span>(conversion <span class="sc">~</span> treatment<span class="sc">*</span>device, </span>
 <span id="cb1-2"><a href=""></a>  <span class="at">data=</span>experiment_data,</span>
 <span id="cb1-3"><a href=""></a>  <span class="at">family =</span> <span class="fu">binomial</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
@@ -557,52 +561,41 @@ Demetri Pananos
 <p><br></p>
 <div class="fragment fade-in">
 <ul>
-<li>🤷🏽‍♂️ My PM wants “lift”. Is this the lift?</li>
+<li>🤷🏽‍♂️ My PM wants “lift”. Do I need to fit a different model? Should I teach them how to understand odds?
+<ul>
+<li>You don’t have to do either!</li>
+</ul></li>
 </ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href=""></a><span class="co"># Exponentiate to get odds ratios</span></span>
-<span id="cb2-2"><a href=""></a>broom<span class="sc">::</span><span class="fu">tidy</span>(model, <span class="at">exponentiate =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 8 × 5
-  term                                            estimate std.error statistic   p.value
-  &lt;chr&gt;                                              &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
-1 (Intercept)                                        0.112    0.0187   -117.   0        
-2 treatmentTreatment                                 1.22     0.0255      7.84 4.36e- 15
-3 deviceMobile                                       0.845    0.0742     -2.27 2.35e-  2
-4 langNon-English                                    0.365    0.0455    -22.1  2.71e-108
-5 treatmentTreatment:deviceMobile                    0.316    0.132      -8.75 2.16e- 18
-6 treatmentTreatment:langNon-English                 0.440    0.0738    -11.1  8.13e- 29
-7 deviceMobile:langNon-English                       0.224    0.509      -2.94 3.25e-  3
-8 treatmentTreatment:deviceMobile:langNon-English   10.5      0.647       3.63 2.82e-  4</code></pre>
-</div>
-</div>
 </div>
 </section>
 <section id="write-your-comparison-as-a-function" class="slide level2">
-<h2>Write Your Comparison as a Function</h2>
+<h2>1. Write Your Comparison as a Function</h2>
 <p><span class="math display">\[
 \operatorname{lift} = \frac{E[Y\mid \mbox{Treat}] - E[Y \mid \mbox{Control}]}{E[Y \mid \mbox{Control}]}
 \]</span></p>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href=""></a>lift <span class="ot">&lt;-</span> <span class="cf">function</span>(treated, control){</span>
-<span id="cb4-2"><a href=""></a>  diff <span class="ot">&lt;-</span> <span class="fu">mean</span>(treated) <span class="sc">-</span> <span class="fu">mean</span>(control)</span>
-<span id="cb4-3"><a href=""></a>  diff <span class="sc">/</span> <span class="fu">mean</span>(control)</span>
-<span id="cb4-4"><a href=""></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href=""></a>lift <span class="ot">&lt;-</span> <span class="cf">function</span>(treated, control){</span>
+<span id="cb2-2"><a href=""></a>  diff <span class="ot">&lt;-</span> <span class="fu">mean</span>(treated) <span class="sc">-</span> <span class="fu">mean</span>(control)</span>
+<span id="cb2-3"><a href=""></a>  diff <span class="sc">/</span> <span class="fu">mean</span>(control)</span>
+<span id="cb2-4"><a href=""></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <p><br></p>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a><span class="fu">library</span>(marginaleffects)</span>
-<span id="cb5-2"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>, <span class="at">comparison =</span> lift)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href=""></a><span class="fu">library</span>(marginaleffects)</span>
+<span id="cb3-2"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model =</span> model,</span>
+<span id="cb3-3"><a href=""></a>                <span class="at">comparison =</span> lift,</span>
+<span id="cb3-4"><a href=""></a>                <span class="at">variables =</span> <span class="st">'treatment'</span></span>
+<span id="cb3-5"><a href=""></a>                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 6
-  term      estimate std.error p.value conf.low conf.high
-  &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment   0.0545    0.0221  0.0137   0.0112    0.0979</code></pre>
+  term      estimate std.error  p.value conf.low conf.high
+  &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+1 treatment   0.0748    0.0201 0.000202   0.0353     0.114</code></pre>
 </div>
 </div>
 </div>
@@ -611,39 +604,23 @@ Demetri Pananos
 <h2>1. Write Your Comparison as a Function</h2>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7" data-code-line-numbers="2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>, <span class="at">comparison =</span> lift,</span>
-<span id="cb7-2"><a href=""></a>                <span class="at">by =</span> <span class="st">'device'</span></span>
-<span id="cb7-3"><a href=""></a>                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5" data-code-line-numbers="4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model =</span> model,</span>
+<span id="cb5-2"><a href=""></a>                <span class="at">comparison =</span> lift,</span>
+<span id="cb5-3"><a href=""></a>                <span class="at">variables =</span> <span class="st">'treatment'</span>,</span>
+<span id="cb5-4"><a href=""></a>                <span class="at">by =</span> <span class="st">'device'</span></span>
+<span id="cb5-5"><a href=""></a>                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 7
   term      device  estimate std.error  p.value conf.low conf.high
   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment Desktop   0.0909    0.0233 9.79e- 5   0.0452     0.137
-2 treatment Mobile   -0.568     0.0515 3.18e-28  -0.669     -0.467</code></pre>
+1 treatment Desktop    0.110    0.0212 1.83e- 7   0.0689     0.152
+2 treatment Mobile    -0.577    0.0471 1.61e-34  -0.669     -0.485</code></pre>
 </div>
 </div>
 </div>
 <p><br></p>
-<div class="fragment fade-in">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9" data-code-line-numbers="2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>, <span class="at">comparison =</span> lift,</span>
-<span id="cb9-2"><a href=""></a>                <span class="at">by =</span> <span class="fu">c</span>(<span class="st">'device'</span>,<span class="st">'lang'</span>)</span>
-<span id="cb9-3"><a href=""></a>                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 8
-  term      device  lang        estimate std.error  p.value conf.low conf.high
-  &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment Desktop English        0.195    0.0272 6.96e-13    0.142     0.248
-2 treatment Desktop Non-English   -0.453    0.0368 8.64e-35   -0.525    -0.381
-3 treatment Mobile  English       -0.592    0.0500 2.26e-32   -0.690    -0.494
-4 treatment Mobile  Non-English    0.770    1.10   4.85e- 1   -1.39      2.93 </code></pre>
-</div>
-</div>
-</div>
 </section>
 <section id="take-away" class="slide level2">
 <h2>Take Away</h2>
@@ -656,28 +633,26 @@ Demetri Pananos
 <section id="weight-your-groups" class="slide level2">
 <h2>2. Weight Your Groups</h2>
 <ul>
-<li>👍🏾 Got it, lift of 5.5%</li>
+<li>👍🏾 Got it, lift of 7.5%</li>
 </ul>
 <div>
 <ul>
 <li class="fragment">One more thing…</li>
 <li class="fragment">We decided to add mobile users <em>near the end</em> of the experiment.
 <ul>
-<li class="fragment">Weights are wrong! Do you know what this means?</li>
+<li class="fragment">Experiment weights don’t match population weights!</li>
 </ul></li>
 </ul>
 </div>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href=""></a>population_weights</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href=""></a>population_weights</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 4 × 4
-  device  lang        population_weight experiment_weight
-  &lt;chr&gt;   &lt;chr&gt;                   &lt;dbl&gt;             &lt;dbl&gt;
-1 Desktop English                   0.4              0.63
-2 Desktop Non-English               0.2              0.31
-3 Mobile  English                   0.3              0.05
-4 Mobile  Non-English               0.1              0.01</code></pre>
+<pre><code># A tibble: 2 × 3
+  device  population_weight experiment_weight
+  &lt;chr&gt;               &lt;dbl&gt;             &lt;dbl&gt;
+1 Desktop               0.6              0.94
+2 Mobile                0.4              0.06</code></pre>
 </div>
 </div>
 </div>
@@ -690,22 +665,22 @@ Demetri Pananos
 </ul>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href=""></a>weighted_lift <span class="ot">&lt;-</span> <span class="cf">function</span>(treated, control, w){</span>
-<span id="cb13-2"><a href=""></a>  diff <span class="ot">&lt;-</span> <span class="fu">weighted.mean</span>(treated, w) <span class="sc">-</span> <span class="fu">weighted.mean</span>(control, w)</span>
-<span id="cb13-3"><a href=""></a>  diff <span class="sc">/</span> <span class="fu">weighted.mean</span>(control, w)</span>
-<span id="cb13-4"><a href=""></a>}</span>
-<span id="cb13-5"><a href=""></a></span>
-<span id="cb13-6"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>, </span>
-<span id="cb13-7"><a href=""></a>                <span class="at">comparison=</span>weighted_lift,</span>
-<span id="cb13-8"><a href=""></a>                <span class="at">newdata =</span> population_weights, </span>
-<span id="cb13-9"><a href=""></a>                <span class="at">wts=</span><span class="st">'population_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href=""></a>weighted_lift <span class="ot">&lt;-</span> <span class="cf">function</span>(treated, control, w){</span>
+<span id="cb9-2"><a href=""></a>  diff <span class="ot">&lt;-</span> <span class="fu">weighted.mean</span>(treated, w) <span class="sc">-</span> <span class="fu">weighted.mean</span>(control, w)</span>
+<span id="cb9-3"><a href=""></a>  diff <span class="sc">/</span> <span class="fu">weighted.mean</span>(control, w)</span>
+<span id="cb9-4"><a href=""></a>}</span>
+<span id="cb9-5"><a href=""></a></span>
+<span id="cb9-6"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model=</span>model, <span class="at">variables =</span> <span class="st">'treatment'</span>, </span>
+<span id="cb9-7"><a href=""></a>                <span class="at">comparison=</span>weighted_lift,</span>
+<span id="cb9-8"><a href=""></a>                <span class="at">newdata =</span> population_weights, </span>
+<span id="cb9-9"><a href=""></a>                <span class="at">wts=</span><span class="st">'population_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 1 × 6
-  term      estimate std.error    p.value conf.low conf.high
-  &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment   -0.140    0.0290 0.00000144   -0.197   -0.0830</code></pre>
+  term      estimate std.error     p.value conf.low conf.high
+  &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+1 treatment   -0.138    0.0265 0.000000194   -0.190   -0.0859</code></pre>
 </div>
 </div>
 </div>
@@ -724,7 +699,6 @@ Demetri Pananos
 <ul>
 <li class="fragment">😮‍💨 Thanks! I need to make some plots.
 <ul>
-<li class="fragment"><code>{marginaleffects}</code> can help with that too.</li>
 <li class="fragment"><code>plot_predictions</code> can plot model estimates!</li>
 <li class="fragment"><code>plot_comparisons</code> can plot comparisons!</li>
 </ul></li>
@@ -735,7 +709,7 @@ Demetri Pananos
 <h2>3. Use <code>{marginaleffects}</code> to Handle Plots</h2>
 <div>
 <ul>
-<li class="fragment"><p>🤔 <code>ggplot(aes(device, conversion, color=treatment)) + ... + facet_wrap(...)</code>?</p>
+<li class="fragment"><p>🤔 <code>ggplot(aes(treatment, conversion, color=device)) + ...</code></p>
 <ul>
 <li class="fragment">Sure, but don’t forget to weight the data</li>
 </ul></li>
@@ -743,18 +717,18 @@ Demetri Pananos
 </div>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href=""></a>population_weights_w_treat <span class="ot">&lt;-</span> population_weights <span class="sc">%&gt;%</span> </span>
-<span id="cb15-2"><a href=""></a>                              <span class="fu">crossing</span>(</span>
-<span id="cb15-3"><a href=""></a>                                <span class="at">treatment =</span> <span class="fu">c</span>(<span class="st">'Treatment'</span>,<span class="st">'Control'</span>)</span>
-<span id="cb15-4"><a href=""></a>                              )</span>
-<span id="cb15-5"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
-<span id="cb15-6"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
-<span id="cb15-7"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
-<span id="cb15-8"><a href=""></a>                 <span class="at">wts=</span><span class="st">'population_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href=""></a>population_weights_w_treat <span class="ot">&lt;-</span> population_weights <span class="sc">%&gt;%</span> </span>
+<span id="cb11-2"><a href=""></a>                              <span class="fu">crossing</span>(</span>
+<span id="cb11-3"><a href=""></a>                                <span class="at">treatment =</span> <span class="fu">c</span>(<span class="st">'Treatment'</span>,<span class="st">'Control'</span>)</span>
+<span id="cb11-4"><a href=""></a>                              )</span>
+<span id="cb11-5"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
+<span id="cb11-6"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
+<span id="cb11-7"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
+<span id="cb11-8"><a href=""></a>                 <span class="at">wts=</span><span class="st">'population_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-17-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-16-1.png" width="960"></p>
 </figure>
 </div>
 </div>
@@ -773,16 +747,16 @@ Demetri Pananos
 </div>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16" data-code-line-numbers="4-6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
-<span id="cb16-2"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
-<span id="cb16-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'population_weight'</span>) <span class="sc">+</span> </span>
-<span id="cb16-4"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent) <span class="sc">+</span> </span>
-<span id="cb16-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
-<span id="cb16-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12" data-code-line-numbers="4-6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
+<span id="cb12-2"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
+<span id="cb12-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'population_weight'</span>) <span class="sc">+</span> </span>
+<span id="cb12-4"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent) <span class="sc">+</span> </span>
+<span id="cb12-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
+<span id="cb12-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-18-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-17-1.png" width="960"></p>
 </figure>
 </div>
 </div>
@@ -795,38 +769,15 @@ Demetri Pananos
 <li>Can even plot groups with the <code>by</code> argument</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17" data-code-line-numbers="2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
-<span id="cb17-2"><a href=""></a>                 <span class="at">by =</span> <span class="fu">c</span>(<span class="st">'treatment'</span>, <span class="st">'device'</span>), </span>
-<span id="cb17-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'population_weight'</span>) <span class="sc">+</span> </span>
-<span id="cb17-4"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent) <span class="sc">+</span> </span>
-<span id="cb17-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
-<span id="cb17-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13" data-code-line-numbers="2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
+<span id="cb13-2"><a href=""></a>                 <span class="at">by =</span> <span class="fu">c</span>(<span class="st">'treatment'</span>, <span class="st">'device'</span>), </span>
+<span id="cb13-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'population_weight'</span>) <span class="sc">+</span> </span>
+<span id="cb13-4"><a href=""></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>percent) <span class="sc">+</span> </span>
+<span id="cb13-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
+<span id="cb13-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 </div>
-<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-19-1.png" width="960" class="r-stretch"></section>
-<section id="use-marginaleffects-to-handle-plots-4" class="slide level2">
-<h2>3. Use <code>{marginaleffects}</code> to Handle Plots</h2>
-<ul>
-<li>And can plot lift using <code>plot_comparisons</code></li>
-</ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href=""></a><span class="fu">plot_comparisons</span>(<span class="at">model=</span>model, </span>
-<span id="cb18-2"><a href=""></a>                 <span class="at">variables =</span> <span class="st">'treatment'</span>, </span>
-<span id="cb18-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
-<span id="cb18-4"><a href=""></a>                 <span class="at">comparison =</span> weighted_lift, </span>
-<span id="cb18-5"><a href=""></a>                 <span class="at">wts=</span><span class="st">'population_weight'</span>,</span>
-<span id="cb18-6"><a href=""></a>                 <span class="at">by=</span><span class="fu">c</span>(<span class="st">'device'</span>, <span class="st">'lang'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-
-</div>
-<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-20-1.png" width="960" class="r-stretch"></section>
-<section id="take-away-2" class="slide level2">
-<h2>Take Away</h2>
-<ul>
-<li>Using <code>plot_comparisons</code> and <code>plot_predictions</code> to help tell your story</li>
-<li>Return a ggplot object, add your finishing touches</li>
-<li>Signature is very similar to <code>avg_comparisons</code>.</li>
-</ul>
-<div class="quarto-auto-generated-content">
+<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-18-1.png" width="960" class="r-stretch"><div class="quarto-auto-generated-content">
 <div class="footer footer-default">
 
 </div>
