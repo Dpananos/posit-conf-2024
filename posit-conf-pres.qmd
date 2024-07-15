@@ -76,7 +76,8 @@ experiment_data <- od %>%
 
 ::: {.incremental}
 
-- The way we talk about comparisons is important
+- The way we talk about comparisons is important.
+- Good comparisons are crucial for compelling stories.
 - Applies to data science since _regression creates comparisons_
 
 :::
@@ -259,7 +260,7 @@ polls %>%
 :::: {.columns}
 
 ::: {.column width="50%"}
-* Generate comparisons from over 100+ models using `avg_comparisons`
+* Generate counterfactual comparisons from over 100+ models using `avg_comparisons`
 * Re-weight comparisons  with `wts` argument
 * Plot using `plot_predictions` and `plot_comparisons`
 * Available for R and python!
@@ -371,8 +372,7 @@ avg_comparisons(model = model,
 ```{r}
 #| echo: false
 #| eval: true
-avg_comparisons(model=model, variables = 'treatment', comparison = lift) %>% 
-  as_tibble() ->d
+avg_comparisons(model=model, variables = 'treatment', comparison = lift) ->d
 
 
 select(d, -contrast) %>% 
@@ -400,8 +400,7 @@ avg_comparisons(model = model,
 #| echo: false
 #| eval: true
 avg_comparisons(model=model, variables = 'treatment', comparison = lift,
-                by = 'device') %>% 
-  as_tibble()-> d
+                by = 'device')-> d
 
 
 select(d, -contrast) %>% 
@@ -446,7 +445,7 @@ population_weights
 ## 2. Weight Your Groups
 
 
-* This means comparisons are biased!
+* **Bias towards desktop users!**
 * Create a weighted comparison function, correct with `newdata=` and `wts=`
 
 
@@ -481,8 +480,7 @@ weighted_lift <- function(hi, lo, w){
 avg_comparisons(model=model, variables = 'treatment',
                 newdata = population_weights,
                 comparison=weighted_lift,
-                wts='population_weight') %>% 
-  as_tibble() -> d
+                wts='population_weight')-> d
 
 
 select(d, -contrast) %>% 

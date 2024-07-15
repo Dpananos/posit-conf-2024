@@ -11,7 +11,7 @@
   <meta name="generator" content="quarto-1.4.549">
 
   <meta name="author" content="Demetri Pananos">
-  <meta name="dcterms.date" content="2024-07-14">
+  <meta name="dcterms.date" content="2024-07-15">
   <title>Using {marginaleffects} For Better Comparisons</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -403,7 +403,7 @@ Demetri Pananos
 </div>
 </div>
 
-  <p class="date">July 14, 2024</p>
+  <p class="date">July 15, 2024</p>
 </section>
 <section id="comparisons-are-important" class="slide level2">
 <h2>Comparisons are Important</h2>
@@ -427,7 +427,8 @@ Demetri Pananos
 </ul>
 <div>
 <ul>
-<li class="fragment">The way we talk about comparisons is important</li>
+<li class="fragment">The way we talk about comparisons is important.</li>
+<li class="fragment">Good comparisons are crucial for compelling stories.</li>
 <li class="fragment">Applies to data science since <em>regression creates comparisons</em></li>
 </ul>
 </div>
@@ -511,7 +512,7 @@ Demetri Pananos
 <div class="columns">
 <div class="column" style="width:50%;">
 <ul>
-<li>Generate comparisons from over 100+ models using <code>avg_comparisons</code></li>
+<li>Generate counterfactual comparisons from over 100+ models using <code>avg_comparisons</code></li>
 <li>Re-weight comparisons with <code>wts</code> argument</li>
 <li>Plot using <code>plot_predictions</code> and <code>plot_comparisons</code></li>
 <li>Available for R and python!</li>
@@ -561,7 +562,7 @@ Demetri Pananos
 <p><br></p>
 <div class="fragment fade-in">
 <ul>
-<li>🤷🏽‍♂️ My PM wants “lift”. Do I need to fit a different model? Should I teach them how to understand odds?
+<li>🤷🏽‍♂️ My PM wants “lift”. Do I need to fit a different model? Should I teach them to understand odds?
 <ul>
 <li>You don’t have to do either!</li>
 </ul></li>
@@ -592,10 +593,9 @@ Demetri Pananos
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 6
-  term      estimate std.error  p.value conf.low conf.high
-  &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment   0.0748    0.0201 0.000202   0.0353     0.114</code></pre>
+<pre><code>
+      Term Estimate Std. Error Pr(&gt;|z|) CI low CI high
+ treatment   0.0748     0.0201   &lt;0.001 0.0353   0.114</code></pre>
 </div>
 </div>
 </div>
@@ -612,11 +612,10 @@ Demetri Pananos
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 7
-  term      device  estimate std.error  p.value conf.low conf.high
-  &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment Desktop    0.110    0.0212 1.83e- 7   0.0689     0.152
-2 treatment Mobile    -0.577    0.0471 1.61e-34  -0.669     -0.485</code></pre>
+<pre><code>
+      Term Estimate Std. Error Pr(&gt;|z|)  CI low CI high
+ treatment    0.110     0.0212   &lt;0.001  0.0689   0.152
+ treatment   -0.577     0.0471   &lt;0.001 -0.6693  -0.485</code></pre>
 </div>
 </div>
 </div>
@@ -660,7 +659,7 @@ Demetri Pananos
 <section id="weight-your-groups-1" class="slide level2">
 <h2>2. Weight Your Groups</h2>
 <ul>
-<li>This means comparisons are biased!</li>
+<li><strong>Bias towards desktop users!</strong></li>
 <li>Create a weighted comparison function, correct with <code>newdata=</code> and <code>wts=</code></li>
 </ul>
 <div class="fragment fade-in">
@@ -677,10 +676,9 @@ Demetri Pananos
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 1 × 6
-  term      estimate std.error     p.value conf.low conf.high
-  &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;       &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
-1 treatment   -0.138    0.0265 0.000000194   -0.190   -0.0859</code></pre>
+<pre><code>
+      Term Estimate Std. Error Pr(&gt;|z|) CI low CI high
+ treatment   -0.138     0.0265   &lt;0.001  -0.19 -0.0859</code></pre>
 </div>
 </div>
 </div>
