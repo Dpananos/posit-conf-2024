@@ -208,6 +208,8 @@ p2
 
 ##
 
+$$ odds = \dfrac{p}{1-p} $$
+
 ```{r}
 #| echo: false
 polls %>% 
@@ -403,8 +405,9 @@ avg_comparisons(model=model, variables = 'treatment', comparison = lift,
                 by = 'device')-> d
 
 
-select(d, -contrast) %>% 
-  select(term, device, estimate, std.error, p.value, starts_with('conf'))
+d %>%
+  mutate(term = c('Desktop','Mobile')) %>% 
+  select(term, estimate, std.error, p.value, starts_with('conf'))
 
 ```
 
@@ -446,7 +449,7 @@ population_weights
 
 
 * **Bias towards desktop users!**
-* Create a weighted comparison function, correct with `newdata=` and `wts=`
+* Create a weighted comparison function
 
 
 ::: {.fragment .fade-in}
@@ -454,13 +457,27 @@ population_weights
 ```{r}
 #| echo: true
 #| eval: false
+#| code-line-numbers: "1|2-3"
 weighted_lift <- function(treated, control, w){
   diff <- weighted.mean(treated, w) - weighted.mean(control, w)
   diff / weighted.mean(control, w)
 }
 
-avg_comparisons(model=model, variables = 'treatment', 
+```
+
+:::
+
+<br> 
+
+::: {.fragment .fade-in}
+
+```{r}
+#| echo: true
+#| eval: false
+#| code-line-numbers: "4-5"
+avg_comparisons(model=model, 
                 comparison=weighted_lift,
+                variables = 'treatment', 
                 newdata = population_weights, 
                 wts='population_weight')
 ```
@@ -498,9 +515,9 @@ select(d, -contrast) %>%
 ## 3. Use `{marginaleffects}` to Handle Plots
 
 ::: {.incremental}
-* 😮‍💨  Thanks!  I need to make some plots.
-  * `plot_predictions` can plot model estimates!
-  * `plot_comparisons` can plot comparisons!
+* 😮‍💨  Thanks for catching that!  Now, I need to make some plots.
+  * `{marginaleffects}` can do that too!
+  * Can you describe what you want?
 
 :::
 
@@ -509,7 +526,8 @@ select(d, -contrast) %>%
 
 ::: {.incremental}
 
-* 🤔 `ggplot(aes(treatment, conversion, color=device)) + ... `
+* I want to show conversion rates first
+* 🤔 `ggplot(aes(treatment, conversion)) + ... `
 
   * Sure, but don't forget to weight the data
 
@@ -564,6 +582,8 @@ plot_predictions(model=model,
 
 * Can even plot groups with the `by` argument
 
+::: {.fragment .fade-in}
+
 ```{r}
 #| fig-height: 4
 #| code-line-numbers: "2"
@@ -577,3 +597,64 @@ plot_predictions(model=model,
 ```
 
 
+:::
+
+
+## 3. Use `{marginaleffects}` to Handle Plots
+
+::: {.incremental}
+*  🤔 Amazing!  But I also need to visualize the lift.
+    * Try `plot_comparisons`!
+:::
+
+
+
+::: {.fragment .fade-in}
+```{r}
+#| fig-height: 4
+
+plot_comparisons(model=model,  
+                 by = c('device'), 
+                 variables = 'treatment',
+                 comparison = weighted_lift,
+                 newdata = population_weights_w_treat, 
+                 wts='population_weight') 
+```
+:::
+
+
+
+## Take Away
+
+* `{marginaleffects}` can get you started on making plots for comparisons and predictions
+* `{marginaleffects}` returns a ggplot object
+* Signatures look a lot like `avg_comparisons`.
+
+
+## A (Not So) True Story:
+
+::: {.incremental}
+
+* _I was the colleague_!
+:::
+
+
+::: {.fragment .fade-in}
+![](fig/DM.png){fig-align="center" width=80%}
+:::
+
+
+## So Much I Couldn't Fit In
+
+
+* Go to `https://marginaleffects.com/`!
+  * Vignettes
+  * Docs
+  * Memes
+
+::: {.incremental}
+* See you in 355.23 Sols !
+* (or 1 year 😉)
+:::
+ 
+# Fin
