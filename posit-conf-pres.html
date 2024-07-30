@@ -11,7 +11,7 @@
   <meta name="generator" content="quarto-1.4.549">
 
   <meta name="author" content="Demetri Pananos">
-  <meta name="dcterms.date" content="2024-07-17">
+  <meta name="dcterms.date" content="2024-07-30">
   <title>Using {marginaleffects} For Better Comparisons</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -403,7 +403,7 @@ Demetri Pananos
 </div>
 </div>
 
-  <p class="date">July 17, 2024</p>
+  <p class="date">July 30, 2024</p>
 </section>
 <section id="comparisons-are-important" class="slide level2">
 <h2>Comparisons are Important</h2>
@@ -449,11 +449,11 @@ Demetri Pananos
 </ul>
 </div>
 <div class="fragment fade-in">
-<div class="cell">
+<div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-2-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-2-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
 </figure>
 </div>
 </div>
@@ -476,11 +476,11 @@ Demetri Pananos
 </ul>
 </div>
 <div class="fragment fade-in">
-<div class="cell">
+<div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-3-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-3-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
 </figure>
 </div>
 </div>
@@ -491,11 +491,11 @@ Demetri Pananos
 <h2></h2>
 <p><span class="math display">\[ odds = \dfrac{p}{1-p} \]</span></p>
 
-<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-4-1.png" width="960" class="r-stretch"></section>
+<img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-4-1.png" class="quarto-figure quarto-figure-center r-stretch" width="960"></section>
 <section id="section-1" class="slide level2">
 <h2></h2>
 
-<img data-src="fig/Selection%20Bias%20explain%20xkcd.png" class="quarto-figure quarto-figure-center r-stretch" style="width:80.0%"></section>
+<img data-src="fig/Selection%20Bias%20explain%20xkcd.png" class="quarto-figure quarto-figure-center r-stretch" style="width:50.0%"></section>
 <section id="data-science-is-hard" class="slide level2">
 <h2>Data Science Is Hard…</h2>
 <ul>
@@ -555,9 +555,7 @@ Demetri Pananos
 </ul>
 <div class="fragment fade-in">
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a>model <span class="ot">&lt;-</span> <span class="fu">glm</span>(conversion <span class="sc">~</span> treatment<span class="sc">*</span>device, </span>
-<span id="cb1-2"><a href=""></a>  <span class="at">data=</span>experiment_data,</span>
-<span id="cb1-3"><a href=""></a>  <span class="at">family =</span> <span class="fu">binomial</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href=""></a>model <span class="ot">&lt;-</span> <span class="fu">glm</span>(conversion <span class="sc">~</span> treatment<span class="sc">*</span>device, <span class="at">data=</span>experiment_data, <span class="at">family =</span> <span class="fu">binomial</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <p><br></p>
@@ -589,8 +587,7 @@ Demetri Pananos
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href=""></a><span class="fu">library</span>(marginaleffects)</span>
 <span id="cb3-2"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model =</span> model,</span>
 <span id="cb3-3"><a href=""></a>                <span class="at">comparison =</span> lift,</span>
-<span id="cb3-4"><a href=""></a>                <span class="at">variables =</span> <span class="st">'treatment'</span></span>
-<span id="cb3-5"><a href=""></a>                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-4"><a href=""></a>                <span class="at">variables =</span> <span class="st">'treatment'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
@@ -608,8 +605,7 @@ Demetri Pananos
 <div class="sourceCode cell-code" id="cb5" data-code-line-numbers="4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href=""></a><span class="fu">avg_comparisons</span>(<span class="at">model =</span> model,</span>
 <span id="cb5-2"><a href=""></a>                <span class="at">comparison =</span> lift,</span>
 <span id="cb5-3"><a href=""></a>                <span class="at">variables =</span> <span class="st">'treatment'</span>,</span>
-<span id="cb5-4"><a href=""></a>                <span class="at">by =</span> <span class="st">'device'</span></span>
-<span id="cb5-5"><a href=""></a>                )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-4"><a href=""></a>                <span class="at">by =</span> <span class="st">'device'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="cell-output cell-output-stdout">
@@ -721,19 +717,17 @@ Demetri Pananos
 </ul>
 </div>
 <div class="fragment fade-in">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href=""></a>population_weights_w_treat <span class="ot">&lt;-</span> population_weights <span class="sc">%&gt;%</span> </span>
-<span id="cb12-2"><a href=""></a>                              <span class="fu">crossing</span>(</span>
-<span id="cb12-3"><a href=""></a>                                <span class="at">treatment =</span> <span class="fu">c</span>(<span class="st">'Treatment'</span>,<span class="st">'Control'</span>)</span>
-<span id="cb12-4"><a href=""></a>                              )</span>
-<span id="cb12-5"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
-<span id="cb12-6"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
-<span id="cb12-7"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
-<span id="cb12-8"><a href=""></a>                 <span class="at">wts=</span><span class="st">'population_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb12" data-code-line-numbers="3-6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href=""></a>population_weights_w_treat <span class="ot">&lt;-</span> population_weights <span class="sc">%&gt;%</span> </span>
+<span id="cb12-2"><a href=""></a>                              <span class="fu">crossing</span>(<span class="at">treatment =</span> <span class="fu">c</span>(<span class="st">'Treatment'</span>,<span class="st">'Control'</span>))</span>
+<span id="cb12-3"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
+<span id="cb12-4"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
+<span id="cb12-5"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
+<span id="cb12-6"><a href=""></a>                 <span class="at">wts=</span><span class="st">'population_weight'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-17-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-17-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
 </figure>
 </div>
 </div>
@@ -751,7 +745,7 @@ Demetri Pananos
 </ul>
 </div>
 <div class="fragment fade-in">
-<div class="cell">
+<div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb13" data-code-line-numbers="4-6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
 <span id="cb13-2"><a href=""></a>                 <span class="at">by =</span> <span class="st">'treatment'</span>, </span>
 <span id="cb13-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'population_weight'</span>) <span class="sc">+</span> </span>
@@ -759,9 +753,9 @@ Demetri Pananos
 <span id="cb13-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
 <span id="cb13-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-18-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-18-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
 </figure>
 </div>
 </div>
@@ -774,7 +768,7 @@ Demetri Pananos
 <li>Can even plot groups with the <code>by</code> argument</li>
 </ul>
 <div class="fragment fade-in">
-<div class="cell">
+<div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb14" data-code-line-numbers="2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href=""></a><span class="fu">plot_predictions</span>(<span class="at">model=</span>model,  </span>
 <span id="cb14-2"><a href=""></a>                 <span class="at">by =</span> <span class="fu">c</span>(<span class="st">'treatment'</span>, <span class="st">'device'</span>), </span>
 <span id="cb14-3"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, <span class="at">wts=</span><span class="st">'population_weight'</span>) <span class="sc">+</span> </span>
@@ -782,9 +776,9 @@ Demetri Pananos
 <span id="cb14-5"><a href=""></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
 <span id="cb14-6"><a href=""></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">'Bad News: Treatment Decreases Overall Conversion'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-19-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-19-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
 </figure>
 </div>
 </div>
@@ -802,7 +796,7 @@ Demetri Pananos
 </ul>
 </div>
 <div class="fragment fade-in">
-<div class="cell">
+<div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href=""></a><span class="fu">plot_comparisons</span>(<span class="at">model=</span>model,  </span>
 <span id="cb15-2"><a href=""></a>                 <span class="at">by =</span> <span class="fu">c</span>(<span class="st">'device'</span>), </span>
 <span id="cb15-3"><a href=""></a>                 <span class="at">variables =</span> <span class="st">'treatment'</span>,</span>
@@ -810,9 +804,9 @@ Demetri Pananos
 <span id="cb15-5"><a href=""></a>                 <span class="at">newdata =</span> population_weights_w_treat, </span>
 <span id="cb15-6"><a href=""></a>                 <span class="at">wts=</span><span class="st">'population_weight'</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<div>
+<div class="quarto-figure quarto-figure-center">
 <figure>
-<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-20-1.png" width="960"></p>
+<p><img data-src="posit-conf-pres_files/figure-revealjs/unnamed-chunk-20-1.png" class="quarto-figure quarto-figure-center" width="960"></p>
 </figure>
 </div>
 </div>
@@ -1043,9 +1037,9 @@ Demetri Pananos
         // The "normal" size of the presentation, aspect ratio will be preserved
         // when the presentation is scaled to fit different resolutions. Can be
         // specified using percentage units.
-        width: 1050,
+        width: 1328,
 
-        height: 700,
+        height: 750,
 
         // Factor of the display size that should remain empty around the content
         margin: 0.1,

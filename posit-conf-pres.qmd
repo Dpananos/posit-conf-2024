@@ -1,7 +1,10 @@
 ---
 title: Using `{marginaleffects}` For Better Comparisons
 subtitle: or "Odds ratios?  more like 'Odd Ratios'!"
-format: clean-revealjs
+format: 
+  clean-revealjs:
+    height: 750
+    width: 1328
 html-math-method:
   method: mathjax
   url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
@@ -10,6 +13,7 @@ author:
 date: last-modified
 execute:
   echo: true
+fig-align: center
 ---
 
 
@@ -98,6 +102,7 @@ experiment_data <- od %>%
 
 ```{r}
 #| echo: false
+#| fig-align: center
 polls <- tribble(
   ~'prop', ~'response', ~"prompt", ~"correct", 
   0.107, "<20%", "Probability", 0,
@@ -171,6 +176,7 @@ p1
 
 ```{r}
 #| echo: false
+#| fig-align: center
 polls %>% 
   filter(prompt=='Odds') %>% 
   ggplot(aes(response, prop, fill=correct)) + 
@@ -212,6 +218,7 @@ $$ odds = \dfrac{p}{1-p} $$
 
 ```{r}
 #| echo: false
+#| fig-align: center
 polls %>% 
   ggplot(aes(response, prop, fill=correct)) + 
   geom_col(color='black') +
@@ -246,7 +253,7 @@ polls %>%
 ## 
 
 
-![](fig/Selection Bias explain xkcd.png){fig-align="center" width=80%}
+![](fig/Selection Bias explain xkcd.png){fig-align="center" width=50%}
 
 ## Data Science Is Hard...
 
@@ -310,9 +317,7 @@ A colleague came to me one day...
 ```{r}
 #| echo: true
 
-model <- glm(conversion ~ treatment*device, 
-  data=experiment_data,
-  family = binomial())
+model <- glm(conversion ~ treatment*device, data=experiment_data, family = binomial())
 ```
 :::
 
@@ -368,8 +373,7 @@ lift <- function(hi, lo){
 library(marginaleffects)
 avg_comparisons(model = model,
                 comparison = lift,
-                variables = 'treatment'
-                )
+                variables = 'treatment')
 ```
 ```{r}
 #| echo: false
@@ -394,8 +398,7 @@ select(d, -contrast) %>%
 avg_comparisons(model = model,
                 comparison = lift,
                 variables = 'treatment',
-                by = 'device'
-                )
+                by = 'device')
 ```
 
 ```{r}
@@ -537,10 +540,11 @@ select(d, -contrast) %>%
 
 ```{r}
 #| fig-height: 4
+#| fig-align: center
+#| code-line-numbers: "3-6"
+
 population_weights_w_treat <- population_weights %>% 
-                              crossing(
-                                treatment = c('Treatment','Control')
-                              )
+                              crossing(treatment = c('Treatment','Control'))
 plot_predictions(model=model,  
                  by = 'treatment', 
                  newdata = population_weights_w_treat, 
@@ -565,7 +569,7 @@ plot_predictions(model=model,
 ```{r}
 #| fig-height: 4
 #| code-line-numbers: "4-6"
-
+#| fig-align: center
 plot_predictions(model=model,  
                  by = 'treatment', 
                  newdata = population_weights_w_treat, wts='population_weight') + 
@@ -587,6 +591,7 @@ plot_predictions(model=model,
 ```{r}
 #| fig-height: 4
 #| code-line-numbers: "2"
+#| fig-align: center
 
 plot_predictions(model=model,  
                  by = c('treatment', 'device'), 
@@ -612,6 +617,7 @@ plot_predictions(model=model,
 ::: {.fragment .fade-in}
 ```{r}
 #| fig-height: 4
+#| fig-align: center
 
 plot_comparisons(model=model,  
                  by = c('device'), 
